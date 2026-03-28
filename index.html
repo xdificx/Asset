@@ -798,6 +798,23 @@
         <input class="form-input" id="sav-end" type="date">
       </div>
     </div>
+    <!-- 군적금 옵션 -->
+    <div class="form-group" style="margin-top:4px">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <input type="checkbox" id="sav-military" onchange="toggleMilitaryOption()"
+          style="width:16px; height:16px; accent-color:var(--accent2); cursor:pointer;">
+        <span style="font-size:0.85rem; color:var(--accent2); font-weight:500">🎖️ 장병내일준비적금 (매칭지원금 포함)</span>
+      </label>
+    </div>
+    <div id="militaryOption" style="display:none; background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.2); border-radius:8px; padding:14px; margin-top:4px;">
+      <div style="font-size:0.78rem; color:var(--accent2); margin-bottom:10px;">
+        💡 만기 시 누적 납입액의 <b>100%</b>를 매칭지원금으로 추가 지급
+      </div>
+      <div class="detail-row" style="border:none; padding:4px 0;">
+        <span class="detail-label">매칭지원금 비율</span>
+        <span class="detail-value green">100% (고정)</span>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">취소</button>
       <button class="btn-primary" onclick="addSavings()">추가</button>
@@ -847,7 +864,7 @@ const STORAGE_KEY = 'assetDashboard_v2';
 
 // ⬇️ 여기에 Google Apps Script 웹 앱 URL을 붙여넣으세요
 // 예: 'https://script.google.com/macros/s/AKfycb.../exec'
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwmFyLtnAy_8uRNWQ8YDEW2DQ16GcirXgnD2tTVQl32jISPNdHufPwENFLd9aAx1U7e/exec';
+const SHEETS_URL = '여기에_Google_Apps_Script_URL_붙여넣기';
 
 function loadData() {
   try {
@@ -939,6 +956,10 @@ function openModal(type) {
 }
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
+  // 군적금 체크박스 초기화
+  const milCb = document.getElementById('sav-military');
+  if (milCb) { milCb.checked = false; }
+  document.getElementById('militaryOption').style.display = 'none';
 }
 document.getElementById('modalOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
@@ -1043,14 +1064,20 @@ function monthsElapsed(start) {
   return Math.max(1, (now.getFullYear() - s.getFullYear()) * 12 + (now.getMonth() - s.getMonth()) + 1);
 }
 
+function toggleMilitaryOption() {
+  const checked = document.getElementById('sav-military').checked;
+  document.getElementById('militaryOption').style.display = checked ? 'block' : 'none';
+}
+
 function addSavings() {
   const name = document.getElementById('sav-name').value.trim();
   const monthly = parseFloat(document.getElementById('sav-monthly').value);
   const rate = parseFloat(document.getElementById('sav-rate').value);
   const start = document.getElementById('sav-start').value;
   const end = document.getElementById('sav-end').value;
+  const isMilitary = document.getElementById('sav-military').checked;
   if (!name || !monthly || !rate) { showToast('❌ 모든 항목을 입력해주세요'); return; }
-  appData.savings.push({ id: Date.now(), name, monthly, rate, start, end });
+  appData.savings.push({ id: Date.now(), name, monthly, rate, start, end, isMilitary });
   saveData(appData);
   closeModal();
   renderAll();
@@ -1077,11 +1104,43 @@ function renderSavings() {
     const monthlyInterest = accumulated * (s.rate / 100) / 12;
     const progress = total > 0 ? Math.min(100, (elapsed / total) * 100) : 0;
     const remaining = total - elapsed;
+
+    // 군적금 만기 수령액 계산
+    const totalAccumulated = s.monthly * total;
+    const matchingAmount = s.isMilitary ? totalAccumulated : 0;
+    const totalInterest = totalAccumulated * (s.rate / 100) / 12 * total;
+    const maturityTotal = totalAccumulated + matchingAmount + totalInterest;
+
+    const militaryBadge = s.isMilitary
+      ? `<span style="font-size:0.72rem; background:rgba(0,255,136,0.1); color:var(--accent2); border:1px solid rgba(0,255,136,0.2); padding:2px 7px; border-radius:4px; margin-left:6px;">🎖️ 군적금</span>`
+      : '';
+
+    const militaryDetail = s.isMilitary ? `
+        <div style="background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.15); border-radius:8px; padding:10px 12px; margin:10px 0;">
+          <div style="font-size:0.75rem; color:var(--accent2); font-weight:500; margin-bottom:8px;">🎖️ 매칭지원금 상세</div>
+          <div class="detail-row" style="padding:6px 0;">
+            <span class="detail-label">만기 시 총 납입액</span>
+            <span class="detail-value">${fmt(totalAccumulated)}</span>
+          </div>
+          <div class="detail-row" style="padding:6px 0;">
+            <span class="detail-label">매칭지원금 (100%)</span>
+            <span class="detail-value green">+${fmt(matchingAmount)}</span>
+          </div>
+          <div class="detail-row" style="padding:6px 0;">
+            <span class="detail-label">적금이자 (세전)</span>
+            <span class="detail-value green">+${fmt(totalInterest)}</span>
+          </div>
+          <div class="detail-row" style="padding:6px 0; border-bottom:none;">
+            <span class="detail-label" style="font-weight:500; color:var(--text);">만기 수령 예상액</span>
+            <span class="detail-value" style="color:var(--gold); font-size:0.95rem;">≈ ${fmt(maturityTotal)}</span>
+          </div>
+        </div>` : '';
+
     return `
       <div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border)">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
           <div>
-            <div style="font-size:0.88rem; font-weight:500">${s.name}</div>
+            <div style="font-size:0.88rem; font-weight:500">${s.name}${militaryBadge}</div>
             <div style="font-size:0.75rem; color:var(--muted)">연 ${s.rate}% | ${elapsed}/${total}개월 납입</div>
           </div>
           <button onclick="removeSavings(${s.id})" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.8rem">✕</button>
@@ -1102,6 +1161,7 @@ function renderSavings() {
           <span class="detail-label">잔여 납입</span>
           <span class="detail-value">${remaining}개월 (${fmt(s.monthly * remaining)})</span>
         </div>
+        ${militaryDetail}
         <div class="progress-wrap" style="margin-top:10px">
           <div class="progress-label"><span>납입 진행률</span><span>${progress.toFixed(0)}%</span></div>
           <div class="progress-bar"><div class="progress-fill fill-green" style="width:${progress}%"></div></div>
@@ -1205,10 +1265,13 @@ function calcTotals() {
   const depositTotal = appData.deposits.reduce((sum, d) => sum + d.amount, 0);
   const depositMonthly = appData.deposits.reduce((sum, d) => sum + d.amount * (d.rate / 100) / 12 * 0.846, 0);
 
-  // Savings
+  // Savings (군적금 매칭지원금 포함)
   const savingsTotal = appData.savings.reduce((sum, s) => {
     const elapsed = s.start ? monthsElapsed(s.start) : 0;
-    return sum + s.monthly * elapsed;
+    const accumulated = s.monthly * elapsed;
+    // 군적금이면 현재까지 납입액 기준 매칭지원금도 자산으로 반영
+    const matchingAccrued = s.isMilitary ? accumulated : 0;
+    return sum + accumulated + matchingAccrued;
   }, 0);
   const savingsMonthly = appData.savings.reduce((sum, s) => sum + s.monthly, 0);
   const savingsInterest = appData.savings.reduce((sum, s) => {
