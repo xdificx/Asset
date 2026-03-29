@@ -481,16 +481,113 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
       </div>
     </div>
 
-    <!-- Monthly summary -->
-    <div class="stat-strip">
-      <div class="stat-box"><div class="stat-box-lbl">이번 달 수입</div><div class="stat-box-val green" id="sp-income">₩0</div></div>
-      <div class="stat-box"><div class="stat-box-lbl">이번 달 지출</div><div class="stat-box-val down" id="sp-expense">₩0</div></div>
-      <div class="stat-box"><div class="stat-box-lbl">잔액</div><div class="stat-box-val" id="sp-balance">₩0</div></div>
+
+    <!-- 수입/지출 비율 + 카드이용비율 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+      <!-- 수입/지출 비율 -->
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 수입/지출 비율</div></div>
+        <div style="display:flex;align-items:stretch;gap:16px;">
+          <!-- 도넛차트 (좌측 3.5, 박스 포함) -->
+          <div style="flex:3.5;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+            <div class="donut-container" style="width:100px;height:100px;flex-shrink:0;">
+              <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="36" fill="none" stroke="var(--border)" stroke-width="14"/>
+                <circle id="ratio-arc-inc" cx="50" cy="50" r="36" fill="none" stroke="#E24B4A" stroke-width="14" stroke-dasharray="0 226" stroke-dashoffset="57" style="transition:all .8s ease" transform="rotate(-90 50 50)"/>
+                <circle id="ratio-arc-exp" cx="50" cy="50" r="36" fill="none" stroke="#378ADD" stroke-width="14" stroke-dasharray="0 226" stroke-dashoffset="57" style="transition:all .8s ease" transform="rotate(-90 50 50)"/>
+              </svg>
+              <div class="donut-center"><div style="font-size:.6rem;color:var(--muted);line-height:1.3;" id="ratio-center">-</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;width:100%;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+                <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0;"></div><span style="font-size:.68rem;color:var(--muted);">수입</span></div>
+                <span style="font-family:'DM Mono',monospace;font-size:.72rem;font-weight:600;color:#E24B4A;" id="ratio-inc-pct">0%</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+                <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#378ADD;flex-shrink:0;"></div><span style="font-size:.68rem;color:var(--muted);">지출</span></div>
+                <span style="font-family:'DM Mono',monospace;font-size:.72rem;font-weight:600;color:#378ADD;" id="ratio-exp-pct">0%</span>
+              </div>
+            </div>
+          </div>
+          <!-- 수입/지출 금액 (우측) -->
+          <div style="display:flex;flex-direction:column;gap:8px;flex:6.5;">
+            <div style="background:#FCEBEB;border-radius:8px;padding:11px 16px;">
+              <div style="font-size:.82rem;color:#E24B4A;margin-bottom:4px;font-weight:600;">이번 달 수입</div>
+              <div style="font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:700;color:#E24B4A;" id="sp-income">₩0</div>
+              <div style="font-size:.75rem;color:#E24B4A;margin-top:3px;opacity:.75;" id="ratio-inc-pct">0%</div>
+            </div>
+            <div style="background:#E6F1FB;border-radius:8px;padding:11px 16px;">
+              <div style="font-size:.82rem;color:#185FA5;margin-bottom:4px;font-weight:600;">이번 달 지출</div>
+              <div style="font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:700;color:#185FA5;" id="sp-expense">₩0</div>
+              <div style="font-size:.75rem;color:#185FA5;margin-top:3px;opacity:.75;" id="ratio-exp-pct">0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 신용/체크카드 이용 비율 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 카드 이용 비율</div>
+          <button class="add-btn" onclick="openCardModal()" style="padding:5px 12px;font-size:.75rem;">+ 입력</button>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+          <!-- 도넛 -->
+          <div class="donut-container" style="width:120px;height:120px;">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="44" fill="none" stroke="var(--border)" stroke-width="16"/>
+              <circle id="card-arc-credit" cx="60" cy="60" r="44" fill="none" stroke="#534AB7" stroke-width="16" stroke-dasharray="0 276" stroke-dashoffset="69" style="transition:all .8s ease" transform="rotate(-90 60 60)"/>
+              <circle id="card-arc-check" cx="60" cy="60" r="44" fill="none" stroke="#97C459" stroke-width="16" stroke-dasharray="0 276" stroke-dashoffset="69" style="transition:all .8s ease" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="donut-center">
+              <div style="font-family:'DM Mono',monospace;font-size:.85rem;font-weight:600;color:var(--text);" id="card-total-center">₩0</div>
+              <div style="font-size:.62rem;color:var(--muted);">총 이용</div>
+            </div>
+          </div>
+          <!-- 레전드 -->
+          <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--purple-light);border-radius:8px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="width:9px;height:9px;border-radius:50%;background:#534AB7;"></div>
+                <span style="font-size:.78rem;color:var(--purple-dark);font-weight:500;">신용카드</span>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:'DM Mono',monospace;font-size:.82rem;font-weight:600;color:var(--purple);" id="card-credit-amt">₩0</div>
+                <div style="font-size:.65rem;color:var(--purple-mid);" id="card-credit-pct">0%</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--green-light);border-radius:8px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="width:9px;height:9px;border-radius:50%;background:#97C459;"></div>
+                <span style="font-size:.78rem;color:var(--green);font-weight:500;">체크카드</span>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:'DM Mono',monospace;font-size:.82rem;font-weight:600;color:var(--green);" id="card-check-amt">₩0</div>
+                <div style="font-size:.65rem;color:var(--green-mid);" id="card-check-pct">0%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /2-col grid -->
+
+    <!-- 카테고리별 지출 도넛 (단독 행) -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 카테고리별 지출</div></div>
+      <div class="chart-wrap">
+        <div class="donut-container">
+          <svg id="sp-donut-svg" width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="56" fill="none" stroke="var(--border)" stroke-width="18"/>
+          </svg>
+          <div class="donut-center"><div class="donut-pct" id="sp-donut-center" style="font-size:1rem">-</div><div class="donut-sub">총 지출</div></div>
+        </div>
+        <div class="sp-legend" id="sp-legend" style="flex:1"></div>
+      </div>
     </div>
 
-    <!-- 고정지출 + 도넛 나란히 -->
+    <!-- 고정지출 + 주별 수입/지출 막대그래프 -->
     <div class="grid-2" style="margin-bottom:20px;">
-
       <!-- 고정지출 카드 -->
       <div class="card">
         <div class="card-header">
@@ -503,32 +600,17 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
           <span class="fe-total-amt" id="fe-total-amt">₩0</span>
         </div>
       </div>
-
-      <!-- 카테고리별 도넛 -->
-      <div class="card">
-        <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 카테고리별 지출</div></div>
-        <div class="chart-wrap">
-          <div class="donut-container">
-            <svg id="sp-donut-svg" width="150" height="150" viewBox="0 0 150 150">
-              <circle cx="75" cy="75" r="56" fill="none" stroke="var(--border)" stroke-width="18"/>
-            </svg>
-            <div class="donut-center"><div class="donut-pct" id="sp-donut-center" style="font-size:1rem">-</div><div class="donut-sub">총 지출</div></div>
-          </div>
-          <div class="sp-legend" id="sp-legend" style="flex:1"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 주별 수입/지출 + 주별 내역 -->
-    <div class="grid-2" style="margin-bottom:20px;">
+      <!-- 주별 수입/지출 막대그래프 -->
       <div class="card">
         <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 주별 수입/지출</div></div>
         <div id="sp-weekly-chart"></div>
       </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 주별 내역</div></div>
-        <div id="sp-weekly-list"></div>
-      </div>
+    </div>
+
+    <!-- 주별 내역 (가장 하단) -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 주별 내역</div></div>
+      <div id="sp-weekly-list"></div>
     </div>
 
   </div><!-- /spending -->
@@ -719,6 +801,26 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
   </div>
 </div>
 
+<!-- ══ Card Usage Modal ══ -->
+<div class="modal-overlay" id="cardModalOverlay">
+  <div class="modal">
+    <h3>💳 카드 이용금액 입력</h3>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:16px;">이번 달 카드 이용 합계를 입력해 주세요</p>
+    <div class="form-group">
+      <label class="form-label">신용카드 이용금액 (원)</label>
+      <input class="form-input" id="card-credit-input" type="number" placeholder="예: 500000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">체크카드 이용금액 (원)</label>
+      <input class="form-input" id="card-check-input" type="number" placeholder="예: 300000">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCardModal()">취소</button>
+      <button class="btn-primary" onclick="saveCardUsage()">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -729,7 +831,7 @@ const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwmFyLtnAy_8uRNWQ8YD
 
 function loadData() {
   try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
-  return { deposits:[], savings:[], stocks:[], transactions:[], fixedExpenses:[] };
+  return { deposits:[], savings:[], stocks:[], transactions:[], fixedExpenses:[], cardUsage:{} };
 }
 async function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -748,6 +850,7 @@ async function loadFromSheets() {
       appData = data;
       if (!appData.transactions) appData.transactions = [];
       if (!appData.fixedExpenses) appData.fixedExpenses = [];
+      if (!appData.cardUsage) appData.cardUsage = {};
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       renderAll(); showToast('✅ 클라우드 데이터 불러오기 완료!');
     }
@@ -1199,30 +1302,34 @@ function renderSpending() {
   const txs=getTxMonth(spY,spM);
   const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const txExp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-
-  // 고정지출 합계를 월 지출에 포함
-  const fixedItems = appData.fixedExpenses || [];
-  const fixedTotal = fixedItems.reduce((s,f)=>s+f.amount,0);
-  const exp = txExp + fixedTotal;
-  const bal = inc - exp;
+  const fixedItems=appData.fixedExpenses||[];
+  const fixedTotal=fixedItems.reduce((s,f)=>s+f.amount,0);
+  const exp=txExp+fixedTotal;
 
   document.getElementById('sp-income').textContent='+'+fmt(inc);
   document.getElementById('sp-expense').textContent='-'+fmt(exp);
-  const balEl=document.getElementById('sp-balance');
-  balEl.textContent=(bal>=0?'+':'')+fmt(bal);
-  balEl.className='stat-box-val '+(bal>=0?'up':'down');
 
-  // Category donut: 일반 지출 카테고리맵 + 고정지출을 카테고리별로 합산
+  // ── 수입/지출 비율 도넛 (r=56, 수입=빨강, 지출=파랑) ──
+  const total=inc+exp||1;
+  const incPct=inc/total*100;
+  const expPct=exp/total*100;
+  const circ2=2*Math.PI*36;
+  const incLen=(incPct/100)*circ2;
+  const expLen=(expPct/100)*circ2;
+  const arcInc=document.getElementById('ratio-arc-inc');
+  const arcExp=document.getElementById('ratio-arc-exp');
+  arcInc.setAttribute('stroke-dasharray',`${incLen} ${circ2-incLen}`);
+  arcInc.setAttribute('stroke-dashoffset', circ2*0.25);
+  arcExp.setAttribute('stroke-dasharray',`${expLen} ${circ2-expLen}`);
+  arcExp.setAttribute('stroke-dashoffset', circ2*0.25-incLen);
+  document.getElementById('ratio-inc-pct').textContent=incPct.toFixed(1)+'%';
+  document.getElementById('ratio-exp-pct').textContent=expPct.toFixed(1)+'%';
+
+  // ── 카테고리별 지출 도넛 ──
   const expTxs=txs.filter(t=>t.type==='expense');
   const catMap={};
   expTxs.forEach(t=>{if(!catMap[t.cat])catMap[t.cat]=0;catMap[t.cat]+=t.amount;});
-  // 고정지출 항목도 카테고리별로 합산 (FE_CATS 키 → cat id 로 사용)
-  fixedItems.forEach(f=>{
-    const key='fe_'+f.cat; // 고정지출 카테고리는 'fe_' prefix로 구분
-    if(!catMap[key])catMap[key]=0;
-    catMap[key]+=f.amount;
-  });
-
+  fixedItems.forEach(f=>{const key='fe_'+f.cat;if(!catMap[key])catMap[key]=0;catMap[key]+=f.amount;});
   const catEntries=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
   const allCats=[...CAT_INCOME,...CAT_EXPENSE];
   const svg=document.getElementById('sp-donut-svg');
@@ -1245,37 +1352,24 @@ function renderSpending() {
     svg.appendChild(arc);
     arcOffset-=len;
   });
-
-  // Legend: 일반 지출 + 고정지출 카테고리 표시
   const legend=document.getElementById('sp-legend');
-  if (!catEntries.length){legend.innerHTML='<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:16px;">이번 달 지출 내역이 없습니다</div>';return;}
-  legend.innerHTML=catEntries.map(([catId,amt],i)=>{
-    let icon, label;
-    if (catId.startsWith('fe_')) {
-      const feKey = catId.replace('fe_','');
-      const feCatInfo = FE_CATS[feKey] || {icon:'📌',label:'기타'};
-      icon = feCatInfo.icon; label = feCatInfo.label+' (고정)';
-    } else {
-      const cat = allCats.find(c=>c.id===catId)||{icon:'💸',label:'기타'};
-      icon = cat.icon; label = cat.label;
-    }
-    const pct=exp>0?(amt/exp*100):0;
-    return `<div class="sp-leg-item">
-      <div class="sp-leg-left">
-        <div class="sp-leg-color" style="background:${CAT_COLORS[i%CAT_COLORS.length]}"></div>
-        <span style="font-size:.85rem;">${icon}</span>
-        <span class="sp-leg-name">${label}</span>
-      </div>
-      <div class="sp-leg-right">
-        <div class="sp-leg-amt">${fmt(amt)}</div>
-        <div class="sp-leg-pct">${pct.toFixed(1)}%</div>
-      </div>
-    </div>`;
-  }).join('');
+  if (!catEntries.length){legend.innerHTML='<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:16px;">이번 달 지출 내역이 없습니다</div>';}
+  else {
+    legend.innerHTML=catEntries.map(([catId,amt],i)=>{
+      let icon,label;
+      if(catId.startsWith('fe_')){const fk=catId.replace('fe_','');const fi=FE_CATS[fk]||{icon:'📌',label:'기타'};icon=fi.icon;label=fi.label+' (고정)';}
+      else{const cat=allCats.find(c=>c.id===catId)||{icon:'💸',label:'기타'};icon=cat.icon;label=cat.label;}
+      const pct=exp>0?(amt/exp*100):0;
+      return `<div class="sp-leg-item">
+        <div class="sp-leg-left"><div class="sp-leg-color" style="background:${CAT_COLORS[i%CAT_COLORS.length]}"></div><span style="font-size:.85rem;">${icon}</span><span class="sp-leg-name">${label}</span></div>
+        <div class="sp-leg-right"><div class="sp-leg-amt">${fmt(amt)}</div><div class="sp-leg-pct">${pct.toFixed(1)}%</div></div>
+      </div>`;
+    }).join('');
+  }
 
-  // Weekly bar chart
   renderWeeklyChart(spY,spM,txs);
   renderWeeklyList(spY,spM,txs);
+  renderCardDonut();
 }
 
 function getWeekOfMonth(y,m,day) {
@@ -1289,26 +1383,45 @@ function renderWeeklyChart(y,m,txs) {
   txs.forEach(t=>{
     const day=parseInt(t.date.split('-')[2]);
     const w=getWeekOfMonth(y,m,day)-1;
-    if (w>=0&&w<wData.length) { if(t.type==='income')wData[w].inc+=t.amount; else wData[w].exp+=t.amount; }
+    if(w>=0&&w<wData.length){if(t.type==='income')wData[w].inc+=t.amount;else wData[w].exp+=t.amount;}
   });
   const maxVal=Math.max(...wData.map(w=>Math.max(w.inc,w.exp)),1);
+  const BAR_H=28; // 각 막대 높이
+  const GAP=4;    // 수입/지출 사이 간격
+  const WEEK_GAP=16; // 주차 간격
   const c=document.getElementById('sp-weekly-chart');
-  c.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px;">
-    ${wData.map(w=>`<div>
-      <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px;">${w.w}주차</div>
-      <div style="display:flex;flex-direction:column;gap:3px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:30px;font-size:.65rem;color:var(--green);text-align:right;">수입</div>
-          <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${(w.inc/maxVal*100).toFixed(1)}%;background:var(--green-mid);border-radius:3px;transition:width .5s;"></div></div>
-          <div style="width:70px;font-family:'DM Mono',monospace;font-size:.65rem;color:var(--green);">${w.inc>0?fmt(w.inc):'-'}</div>
+  c.innerHTML=`
+  <div style="display:flex;flex-direction:column;gap:${WEEK_GAP}px;">
+    ${wData.map(w=>{
+      const incW=Math.max((w.inc/maxVal*100),w.inc>0?2:0).toFixed(1);
+      const expW=Math.max((w.exp/maxVal*100),w.exp>0?2:0).toFixed(1);
+      return `<div>
+        <div style="font-size:.72rem;font-weight:500;color:var(--text);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;">
+          <span>${w.w}주차</span>
+          <span style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);">${w.inc>0&&w.exp>0?'저축 '+fmt(w.inc-w.exp):''}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:30px;font-size:.65rem;color:var(--red);text-align:right;">지출</div>
-          <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${(w.exp/maxVal*100).toFixed(1)}%;background:var(--red);opacity:.7;border-radius:3px;transition:width .5s;"></div></div>
-          <div style="width:70px;font-family:'DM Mono',monospace;font-size:.65rem;color:var(--red);">${w.exp>0?fmt(w.exp):'-'}</div>
+        <!-- 수입 막대 -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:${GAP}px;">
+          <div style="width:28px;font-size:.65rem;color:var(--green);text-align:right;flex-shrink:0;">수입</div>
+          <div style="flex:1;height:${BAR_H}px;background:var(--green-light);border-radius:6px;overflow:hidden;position:relative;">
+            <div style="height:100%;width:${incW}%;background:var(--green-mid);border-radius:6px;transition:width .6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;">
+              ${w.inc>0?`<span style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--green);white-space:nowrap;">${fmt(w.inc)}</span>`:''}
+            </div>
+            ${w.inc===0?`<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.65rem;color:var(--muted);">-</span>`:''}
+          </div>
         </div>
-      </div>
-    </div>`).join('')}
+        <!-- 지출 막대 -->
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:28px;font-size:.65rem;color:var(--red);text-align:right;flex-shrink:0;">지출</div>
+          <div style="flex:1;height:${BAR_H}px;background:var(--red-light);border-radius:6px;overflow:hidden;position:relative;">
+            <div style="height:100%;width:${expW}%;background:var(--red);opacity:.75;border-radius:6px;transition:width .6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;">
+              ${w.exp>0?`<span style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--red);white-space:nowrap;">${fmt(w.exp)}</span>`:''}
+            </div>
+            ${w.exp===0?`<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.65rem;color:var(--muted);">-</span>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
   </div>`;
 }
 function renderWeeklyList(y,m,txs) {
@@ -1365,7 +1478,55 @@ function toggleBalance() {
   targets.forEach(el => { if (el) el.classList.toggle('blurred', balanceHidden); });
 }
 
-// ── Fixed Expense ──
+// ── Card Usage ──
+function openCardModal() {
+  const d = appData.cardUsage || {};
+  const spKey = `${spY}-${String(spM+1).padStart(2,'0')}`;
+  const cur = d[spKey] || {credit:0, check:0};
+  document.getElementById('card-credit-input').value = cur.credit || '';
+  document.getElementById('card-check-input').value = cur.check || '';
+  document.getElementById('cardModalOverlay').classList.add('active');
+}
+function closeCardModal() { document.getElementById('cardModalOverlay').classList.remove('active'); }
+document.getElementById('cardModalOverlay').addEventListener('click', function(e){ if(e.target===this) closeCardModal(); });
+
+function saveCardUsage() {
+  const credit = parseFloat(document.getElementById('card-credit-input').value) || 0;
+  const check  = parseFloat(document.getElementById('card-check-input').value)  || 0;
+  if (!appData.cardUsage) appData.cardUsage = {};
+  const spKey = `${spY}-${String(spM+1).padStart(2,'0')}`;
+  appData.cardUsage[spKey] = { credit, check };
+  saveData(appData);
+  closeCardModal();
+  renderCardDonut();
+  showToast('✅ 카드 이용금액이 저장됐습니다');
+}
+
+function renderCardDonut() {
+  const spKey = `${spY}-${String(spM+1).padStart(2,'0')}`;
+  const d = (appData.cardUsage || {})[spKey] || {credit:0, check:0};
+  const credit = d.credit || 0;
+  const check  = d.check  || 0;
+  const total  = credit + check || 1;
+  const creditPct = credit / total * 100;
+  const checkPct  = check  / total * 100;
+  const circ3 = 2 * Math.PI * 44;
+  const creditLen = (creditPct / 100) * circ3;
+  const checkLen  = (checkPct  / 100) * circ3;
+  const arcCredit = document.getElementById('card-arc-credit');
+  const arcCheck  = document.getElementById('card-arc-check');
+  arcCredit.setAttribute('stroke-dasharray', `${creditLen} ${circ3-creditLen}`);
+  arcCredit.setAttribute('stroke-dashoffset', circ3*0.25);
+  arcCheck.setAttribute('stroke-dasharray',  `${checkLen}  ${circ3-checkLen}`);
+  arcCheck.setAttribute('stroke-dashoffset',  circ3*0.25 - creditLen);
+  document.getElementById('card-total-center').textContent  = fmt(credit+check);
+  document.getElementById('card-credit-amt').textContent    = fmt(credit);
+  document.getElementById('card-check-amt').textContent     = fmt(check);
+  document.getElementById('card-credit-pct').textContent    = creditPct.toFixed(1)+'%';
+  document.getElementById('card-check-pct').textContent     = checkPct.toFixed(1)+'%';
+}
+
+
 const FE_CATS = {
   sub:  {icon:'📱', label:'구독'},
   comm: {icon:'📡', label:'통신'},
@@ -1439,7 +1600,7 @@ function renderAll() {
   renderDeposits(); renderSavings(); renderStocks(); renderTotals();
   renderDepStats(); renderSavStats(); renderStkStats();
   renderCal(); renderTxManage(); renderSpending();
-  renderFixedExpenses();
+  renderFixedExpenses(); renderCardDonut();
 }
 async function refreshAll(){showToast('🔄 데이터 새로고침 중...');await fetchAllStocks();renderAll();}
 setInterval(async()=>{if(appData.stocks.length>0)await fetchAllStocks();},60000);
