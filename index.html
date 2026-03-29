@@ -266,6 +266,19 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .cat-btn.selected{border-color:var(--purple);background:var(--purple-light);color:var(--purple);font-weight:500;}
 .cat-icon-lg{font-size:1.2rem;display:block;margin-bottom:3px;}
 
+/* ── Fixed Expense ── */
+.fe-item{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);margin-bottom:8px;}
+.fe-item:last-child{margin-bottom:0;}
+.fe-icon{width:34px;height:34px;border-radius:8px;background:var(--red-light);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.fe-info{flex:1;min-width:0;}
+.fe-name{font-size:.83rem;font-weight:500;color:var(--text);}
+.fe-cat{font-size:.7rem;color:var(--muted);margin-top:1px;}
+.fe-amt{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--red);white-space:nowrap;}
+.fe-total-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--border);margin-top:4px;}
+.fe-total-lbl{font-size:.8rem;font-weight:600;color:var(--text);}
+.fe-total-amt{font-family:'DM Mono',monospace;font-size:1rem;font-weight:600;color:var(--red);}
+.fe-empty{text-align:center;color:var(--muted);padding:24px;font-size:.8rem;}
+
 /* ── Toast ── */
 .toast{position:fixed;bottom:28px;right:28px;background:var(--purple-dark);color:#fff;padding:12px 18px;border-radius:10px;font-size:.8rem;z-index:300;transform:translateY(60px);opacity:0;transition:all .3s;box-shadow:0 4px 20px rgba(38,33,92,.25);}
 .toast.show{transform:translateY(0);opacity:1;}
@@ -475,10 +488,25 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
       <div class="stat-box"><div class="stat-box-lbl">잔액</div><div class="stat-box-val" id="sp-balance">₩0</div></div>
     </div>
 
-    <!-- Donut + legend -->
-    <div class="grid-2" style="margin-bottom:20px">
+    <!-- 고정지출 + 도넛 나란히 -->
+    <div class="grid-2" style="margin-bottom:20px;">
+
+      <!-- 고정지출 카드 -->
       <div class="card">
-        <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--red)"></span> 카테고리별 지출</div></div>
+        <div class="card-header">
+          <div class="card-title"><span class="cdot" style="background:var(--red)"></span> 고정지출비용</div>
+          <button class="add-btn" onclick="openFixedExpenseModal()" style="padding:5px 12px;font-size:.75rem;">+ 항목 추가</button>
+        </div>
+        <div id="fe-list"><div class="fe-empty">고정지출 항목을 추가해 주세요</div></div>
+        <div class="fe-total-row" id="fe-total-row" style="display:none;">
+          <span class="fe-total-lbl">월 고정지출 합계</span>
+          <span class="fe-total-amt" id="fe-total-amt">₩0</span>
+        </div>
+      </div>
+
+      <!-- 카테고리별 도넛 -->
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 카테고리별 지출</div></div>
         <div class="chart-wrap">
           <div class="donut-container">
             <svg id="sp-donut-svg" width="150" height="150" viewBox="0 0 150 150">
@@ -489,16 +517,18 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
           <div class="sp-legend" id="sp-legend" style="flex:1"></div>
         </div>
       </div>
+    </div>
+
+    <!-- 주별 수입/지출 + 주별 내역 -->
+    <div class="grid-2" style="margin-bottom:20px;">
       <div class="card">
         <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 주별 수입/지출</div></div>
         <div id="sp-weekly-chart"></div>
       </div>
-    </div>
-
-    <!-- Weekly breakdown -->
-    <div class="card">
-      <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 주별 내역</div></div>
-      <div id="sp-weekly-list"></div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 주별 내역</div></div>
+        <div id="sp-weekly-list"></div>
+      </div>
     </div>
 
   </div><!-- /spending -->
@@ -657,6 +687,38 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
   </div>
 </div>
 
+<!-- ══ Fixed Expense Modal ══ -->
+<div class="modal-overlay" id="feModalOverlay">
+  <div class="modal">
+    <h3>📌 고정지출 항목 추가</h3>
+    <div class="form-group">
+      <label class="form-label">항목 이름</label>
+      <input class="form-input" id="fe-name" placeholder="예: 통신비, 유튜브 프리미엄">
+    </div>
+    <div class="form-group">
+      <label class="form-label">월 금액 (원)</label>
+      <input class="form-input" id="fe-amount" type="number" placeholder="15000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">카테고리</label>
+      <div class="cat-grid">
+        <button class="cat-btn" id="fecat-sub" onclick="setFeCat('sub')"><span class="cat-icon-lg">📱</span>구독</button>
+        <button class="cat-btn" id="fecat-comm" onclick="setFeCat('comm')"><span class="cat-icon-lg">📡</span>통신</button>
+        <button class="cat-btn" id="fecat-ins" onclick="setFeCat('ins')"><span class="cat-icon-lg">🛡️</span>보험</button>
+        <button class="cat-btn" id="fecat-rent" onclick="setFeCat('rent')"><span class="cat-icon-lg">🏠</span>주거</button>
+        <button class="cat-btn" id="fecat-edu" onclick="setFeCat('edu')"><span class="cat-icon-lg">📚</span>교육</button>
+        <button class="cat-btn" id="fecat-gym" onclick="setFeCat('gym')"><span class="cat-icon-lg">💪</span>헬스</button>
+        <button class="cat-btn" id="fecat-ott" onclick="setFeCat('ott')"><span class="cat-icon-lg">📺</span>OTT</button>
+        <button class="cat-btn" id="fecat-etc" onclick="setFeCat('etc')"><span class="cat-icon-lg">📌</span>기타</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeFeModal()">취소</button>
+      <button class="btn-primary" onclick="saveFixedExpense()">추가</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -667,7 +729,7 @@ const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwmFyLtnAy_8uRNWQ8YD
 
 function loadData() {
   try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
-  return { deposits:[], savings:[], stocks:[], transactions:[] };
+  return { deposits:[], savings:[], stocks:[], transactions:[], fixedExpenses:[] };
 }
 async function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -685,6 +747,7 @@ async function loadFromSheets() {
     if (data && (data.deposits || data.savings || data.stocks)) {
       appData = data;
       if (!appData.transactions) appData.transactions = [];
+      if (!appData.fixedExpenses) appData.fixedExpenses = [];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       renderAll(); showToast('✅ 클라우드 데이터 불러오기 완료!');
     }
@@ -1135,22 +1198,34 @@ function renderSpending() {
   document.getElementById('sp-month-sub').textContent=`${spY}년 ${spM+1}월 지출 분석`;
   const txs=getTxMonth(spY,spM);
   const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const exp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const bal=inc-exp;
+  const txExp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+
+  // 고정지출 합계를 월 지출에 포함
+  const fixedItems = appData.fixedExpenses || [];
+  const fixedTotal = fixedItems.reduce((s,f)=>s+f.amount,0);
+  const exp = txExp + fixedTotal;
+  const bal = inc - exp;
+
   document.getElementById('sp-income').textContent='+'+fmt(inc);
   document.getElementById('sp-expense').textContent='-'+fmt(exp);
   const balEl=document.getElementById('sp-balance');
   balEl.textContent=(bal>=0?'+':'')+fmt(bal);
   balEl.className='stat-box-val '+(bal>=0?'up':'down');
 
-  // Category donut
+  // Category donut: 일반 지출 카테고리맵 + 고정지출을 카테고리별로 합산
   const expTxs=txs.filter(t=>t.type==='expense');
   const catMap={};
   expTxs.forEach(t=>{if(!catMap[t.cat])catMap[t.cat]=0;catMap[t.cat]+=t.amount;});
+  // 고정지출 항목도 카테고리별로 합산 (FE_CATS 키 → cat id 로 사용)
+  fixedItems.forEach(f=>{
+    const key='fe_'+f.cat; // 고정지출 카테고리는 'fe_' prefix로 구분
+    if(!catMap[key])catMap[key]=0;
+    catMap[key]+=f.amount;
+  });
+
   const catEntries=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
   const allCats=[...CAT_INCOME,...CAT_EXPENSE];
   const svg=document.getElementById('sp-donut-svg');
-  // Remove old arcs
   while(svg.children.length>1) svg.removeChild(svg.lastChild);
   const totalExp=exp||1;
   document.getElementById('sp-donut-center').textContent=fmt(exp);
@@ -1170,17 +1245,26 @@ function renderSpending() {
     svg.appendChild(arc);
     arcOffset-=len;
   });
-  // Legend
+
+  // Legend: 일반 지출 + 고정지출 카테고리 표시
   const legend=document.getElementById('sp-legend');
   if (!catEntries.length){legend.innerHTML='<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:16px;">이번 달 지출 내역이 없습니다</div>';return;}
   legend.innerHTML=catEntries.map(([catId,amt],i)=>{
-    const cat=allCats.find(c=>c.id===catId)||{icon:'💸',label:'기타'};
+    let icon, label;
+    if (catId.startsWith('fe_')) {
+      const feKey = catId.replace('fe_','');
+      const feCatInfo = FE_CATS[feKey] || {icon:'📌',label:'기타'};
+      icon = feCatInfo.icon; label = feCatInfo.label+' (고정)';
+    } else {
+      const cat = allCats.find(c=>c.id===catId)||{icon:'💸',label:'기타'};
+      icon = cat.icon; label = cat.label;
+    }
     const pct=exp>0?(amt/exp*100):0;
     return `<div class="sp-leg-item">
       <div class="sp-leg-left">
         <div class="sp-leg-color" style="background:${CAT_COLORS[i%CAT_COLORS.length]}"></div>
-        <span style="font-size:.85rem;">${cat.icon}</span>
-        <span class="sp-leg-name">${cat.label}</span>
+        <span style="font-size:.85rem;">${icon}</span>
+        <span class="sp-leg-name">${label}</span>
       </div>
       <div class="sp-leg-right">
         <div class="sp-leg-amt">${fmt(amt)}</div>
@@ -1189,7 +1273,7 @@ function renderSpending() {
     </div>`;
   }).join('');
 
-  // Weekly bar chart (simple HTML bars)
+  // Weekly bar chart
   renderWeeklyChart(spY,spM,txs);
   renderWeeklyList(spY,spM,txs);
 }
@@ -1281,11 +1365,81 @@ function toggleBalance() {
   targets.forEach(el => { if (el) el.classList.toggle('blurred', balanceHidden); });
 }
 
+// ── Fixed Expense ──
+const FE_CATS = {
+  sub:  {icon:'📱', label:'구독'},
+  comm: {icon:'📡', label:'통신'},
+  ins:  {icon:'🛡️', label:'보험'},
+  rent: {icon:'🏠', label:'주거'},
+  edu:  {icon:'📚', label:'교육'},
+  gym:  {icon:'💪', label:'헬스'},
+  ott:  {icon:'📺', label:'OTT'},
+  etc:  {icon:'📌', label:'기타'},
+};
+let feCat = null;
+
+function openFixedExpenseModal() {
+  feCat = null;
+  document.getElementById('fe-name').value = '';
+  document.getElementById('fe-amount').value = '';
+  document.querySelectorAll('[id^="fecat-"]').forEach(b => b.classList.remove('selected'));
+  document.getElementById('feModalOverlay').classList.add('active');
+}
+function closeFeModal() { document.getElementById('feModalOverlay').classList.remove('active'); }
+document.getElementById('feModalOverlay').addEventListener('click', function(e){ if(e.target===this) closeFeModal(); });
+
+function setFeCat(cat) {
+  feCat = cat;
+  document.querySelectorAll('[id^="fecat-"]').forEach(b => b.classList.remove('selected'));
+  document.getElementById('fecat-'+cat).classList.add('selected');
+}
+function saveFixedExpense() {
+  const name   = document.getElementById('fe-name').value.trim();
+  const amount = parseFloat(document.getElementById('fe-amount').value);
+  if (!name || !amount || amount <= 0) { showToast('❌ 이름과 금액을 입력해주세요'); return; }
+  if (!feCat) { showToast('❌ 카테고리를 선택해주세요'); return; }
+  if (!appData.fixedExpenses) appData.fixedExpenses = [];
+  appData.fixedExpenses.push({ id: Date.now(), name, amount, cat: feCat });
+  saveData(appData);
+  closeFeModal();
+  renderFixedExpenses();
+  showToast('✅ 고정지출 항목이 추가되었습니다');
+}
+function removeFixedExpense(id) {
+  appData.fixedExpenses = (appData.fixedExpenses || []).filter(f => f.id !== id);
+  saveData(appData);
+  renderFixedExpenses();
+  showToast('🗑️ 항목이 삭제되었습니다');
+}
+function renderFixedExpenses() {
+  const list     = document.getElementById('fe-list');
+  const totalRow = document.getElementById('fe-total-row');
+  const totalAmt = document.getElementById('fe-total-amt');
+  const items    = appData.fixedExpenses || [];
+  if (!items.length) {
+    list.innerHTML = '<div class="fe-empty">고정지출 항목을 추가해 주세요</div>';
+    totalRow.style.display = 'none';
+    return;
+  }
+  const total = items.reduce((s, f) => s + f.amount, 0);
+  list.innerHTML = items.map(f => {
+    const cat = FE_CATS[f.cat] || { icon:'📌', label:'기타' };
+    return `<div class="fe-item">
+      <div class="fe-icon">${cat.icon}</div>
+      <div class="fe-info"><div class="fe-name">${f.name}</div><div class="fe-cat">${cat.label}</div></div>
+      <div class="fe-amt">-${fmt(f.amount)}</div>
+      <button class="rm-btn" onclick="removeFixedExpense(${f.id})" style="margin-left:6px;">✕</button>
+    </div>`;
+  }).join('');
+  totalRow.style.display = 'flex';
+  totalAmt.textContent = '-' + fmt(total);
+}
 
 function renderAll() {
   renderDeposits(); renderSavings(); renderStocks(); renderTotals();
   renderDepStats(); renderSavStats(); renderStkStats();
   renderCal(); renderTxManage(); renderSpending();
+  renderFixedExpenses();
 }
 async function refreshAll(){showToast('🔄 데이터 새로고침 중...');await fetchAllStocks();renderAll();}
 setInterval(async()=>{if(appData.stocks.length>0)await fetchAllStocks();},60000);
