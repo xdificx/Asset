@@ -852,35 +852,57 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-hei
 
 <!-- ══ Fixed Expense Modal ══ -->
 <div class="modal-overlay" id="feModalOverlay">
-  <div class="modal">
+  <div class="modal" style="max-width:560px;width:95vw;">
     <h3 id="fe-modal-title">📌 고정지출 항목 추가</h3>
+
+    <!-- 기본 정보 -->
     <div class="form-group">
       <label class="form-label">항목 이름</label>
       <input class="form-input" id="fe-name" placeholder="예: 통신비, 유튜브 프리미엄">
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">월 금액 (원)</label>
-        <input class="form-input" id="fe-amount" type="number" placeholder="15000">
+        <label class="form-label">월 정상 금액 (원)</label>
+        <input class="form-input" id="fe-amount" type="number" placeholder="15000" oninput="feRenderMonthTable()">
       </div>
       <div class="form-group">
         <label class="form-label">출금일 (매월 몇 일)</label>
         <input class="form-input" id="fe-day" type="number" min="1" max="31" placeholder="예: 25">
       </div>
     </div>
+
+    <!-- 카테고리 -->
     <div class="form-group">
       <label class="form-label">카테고리</label>
       <div class="cat-grid">
-        <button class="cat-btn" id="fecat-sub" onclick="setFeCat('sub')"><span class="cat-icon-lg">📱</span>구독</button>
+        <button class="cat-btn" id="fecat-sub"  onclick="setFeCat('sub')"><span class="cat-icon-lg">📱</span>구독</button>
         <button class="cat-btn" id="fecat-comm" onclick="setFeCat('comm')"><span class="cat-icon-lg">📡</span>통신</button>
-        <button class="cat-btn" id="fecat-ins" onclick="setFeCat('ins')"><span class="cat-icon-lg">🛡️</span>보험</button>
+        <button class="cat-btn" id="fecat-ins"  onclick="setFeCat('ins')"><span class="cat-icon-lg">🛡️</span>보험</button>
         <button class="cat-btn" id="fecat-rent" onclick="setFeCat('rent')"><span class="cat-icon-lg">🏠</span>주거</button>
-        <button class="cat-btn" id="fecat-edu" onclick="setFeCat('edu')"><span class="cat-icon-lg">📚</span>교육</button>
-        <button class="cat-btn" id="fecat-gym" onclick="setFeCat('gym')"><span class="cat-icon-lg">💪</span>헬스</button>
-        <button class="cat-btn" id="fecat-ott" onclick="setFeCat('ott')"><span class="cat-icon-lg">📺</span>OTT</button>
-        <button class="cat-btn" id="fecat-etc" onclick="setFeCat('etc')"><span class="cat-icon-lg">📌</span>기타</button>
+        <button class="cat-btn" id="fecat-edu"  onclick="setFeCat('edu')"><span class="cat-icon-lg">📚</span>교육</button>
+        <button class="cat-btn" id="fecat-gym"  onclick="setFeCat('gym')"><span class="cat-icon-lg">💪</span>헬스</button>
+        <button class="cat-btn" id="fecat-ott"  onclick="setFeCat('ott')"><span class="cat-icon-lg">📺</span>OTT</button>
+        <button class="cat-btn" id="fecat-etc"  onclick="setFeCat('etc')"><span class="cat-icon-lg">📌</span>기타</button>
       </div>
     </div>
+
+    <!-- 월별 할인 관리 테이블 -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:.83rem;font-weight:600;color:var(--text);">💸 월별 할인 관리</span>
+        <span style="font-size:.72rem;color:var(--muted);">미입력 월은 정상 금액 적용</span>
+      </div>
+      <!-- 테이블 헤더 -->
+      <div style="display:grid;grid-template-columns:52px 1fr 1fr 80px 24px;gap:6px;padding:6px 8px;background:var(--border);border-radius:6px 6px 0 0;margin-bottom:2px;">
+        <span style="font-size:.7rem;color:var(--muted);font-weight:600;">월</span>
+        <span style="font-size:.7rem;color:var(--muted);font-weight:600;">할인 방식</span>
+        <span style="font-size:.7rem;color:var(--muted);font-weight:600;">값 입력</span>
+        <span style="font-size:.7rem;color:var(--muted);font-weight:600;text-align:right;">실제 금액</span>
+        <span></span>
+      </div>
+      <div id="fe-month-table" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;"></div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeFeModal()">취소</button>
       <button class="btn-primary" id="fe-save-btn" onclick="saveFixedExpense()">추가</button>
@@ -920,7 +942,7 @@ function loadData() {
   // localStorage는 오프라인 캐시 용도로만 사용
   // Sheets가 응답하면 덮어씌워짐
   try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
-  return { deposits:[], savings:[], stocks:[], transactions:[], fixedExpenses:[], cardUsage:{} };
+  return { deposits:[], savings:[], stocks:[], transactions:[], fixedExpenses:[], cardUsage:{}, feDiscounts:{} };
 }
 async function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -949,6 +971,7 @@ async function loadFromSheets() {
       if (!Array.isArray(appData.transactions))  appData.transactions = [];
       if (!Array.isArray(appData.fixedExpenses)) appData.fixedExpenses = [];
       if (!appData.cardUsage || typeof appData.cardUsage !== 'object') appData.cardUsage = {};
+      if (!appData.feDiscounts || typeof appData.feDiscounts !== 'object') appData.feDiscounts = {};
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
       renderAll();
       showToast('✅ 데이터 불러오기 완료');
@@ -973,6 +996,25 @@ function showToast(msg) {
 }
 function calKey(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 // 특정 날짜의 수입/지출 (고정지출 포함)
+// 특정 월의 할인 적용 실제 금액 반환
+function getFeAmount(f, ym) {
+  const key = ym || currentYM();
+  const entry = (appData.feDiscounts || {})[f.id]?.[key];
+  if (!entry) return f.amount;
+  if (typeof entry === 'number') return entry; // 구버전 호환
+  if (entry.type === 'amount')  return entry.val;
+  if (entry.type === 'percent') return Math.round(f.amount * (1 - entry.val / 100));
+  return f.amount;
+}
+function getFeDiscount(f, ym) {
+  const key = ym || currentYM();
+  const entry = (appData.feDiscounts || {})[f.id]?.[key];
+  if (!entry) return null;
+  if (typeof entry === 'number') return entry;
+  if (entry.type === 'amount')  return entry.val;
+  if (entry.type === 'percent') return Math.round(f.amount * (1 - entry.val / 100));
+  return null;
+}
 function getFixedOnDate(ds) {
   // ds = 'YYYY-MM-DD'
   const [y, m, d] = ds.split('-').map(Number);
@@ -1798,38 +1840,129 @@ const FE_CATS = {
 };
 let feCat = null;
 let editingFeId = null;
+// 임시 월별 할인 데이터 (모달 편집 중)
+let feMonthDrafts = {};
+
+// 현재 달 YYYY-MM
+function currentYM() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+}
+// 향후 12개월 YYYY-MM 배열 (과거 3개월 + 현재 + 미래 8개월 = 12개)
+function feGetMonths() {
+  const months = [];
+  const now = new Date();
+  for (let i = -3; i <= 8; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  return months;
+}
+
+// 월별 할인 테이블 렌더링
+function feRenderMonthTable() {
+  const base = parseFloat(document.getElementById('fe-amount').value) || 0;
+  const table = document.getElementById('fe-month-table');
+  if (!table) return;
+  const months = feGetMonths();
+  const thisYM = currentYM();
+  table.innerHTML = months.map(ym => {
+    const [y, m] = ym.split('-');
+    const label = `${parseInt(m)}월`;
+    const isThis = ym === thisYM;
+    const draft = feMonthDrafts[ym] || {};
+    const discType = draft.type || '';
+    const discVal  = draft.val  != null ? draft.val : '';
+    // 실제 금액 계산
+    let actual = base;
+    if (discType === 'amount' && draft.val != null) {
+      actual = draft.val;
+    } else if (discType === 'percent' && draft.val != null) {
+      actual = Math.round(base * (1 - draft.val / 100));
+    }
+    const hasDisc = discType !== '' && draft.val != null;
+    const saved = base - actual;
+    const rowBg = isThis ? 'background:rgba(83,74,183,.06);' : '';
+    const todayMark = isThis ? `<span style="font-size:.6rem;background:var(--purple);color:#fff;border-radius:3px;padding:1px 4px;margin-left:3px;">이번달</span>` : '';
+
+    return `<div style="display:grid;grid-template-columns:52px 1fr 1fr 80px 24px;gap:6px;padding:7px 8px;border-bottom:1px solid var(--border);align-items:center;${rowBg}">
+      <div style="font-size:.75rem;font-weight:${isThis?'700':'400'};color:${isThis?'var(--purple)':'var(--text)'};">${y}년<br>${label}${todayMark}</div>
+      <select onchange="feMonthDrafts['${ym}']={...feMonthDrafts['${ym}']||{},type:this.value,val:null};feRenderMonthTable()"
+        style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 6px;font-size:.72rem;cursor:pointer;width:100%;">
+        <option value="" ${discType===''?'selected':''}>정상금액</option>
+        <option value="amount" ${discType==='amount'?'selected':''}>금액 직접</option>
+        <option value="percent" ${discType==='percent'?'selected':''}>할인율(%)</option>
+      </select>
+      <div>
+        ${discType === 'amount' ? `<input type="number" min="0" value="${discVal}"
+          onchange="feMonthDrafts['${ym}']={type:'amount',val:parseFloat(this.value)||0};feRenderMonthTable()"
+          style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:.72rem;" placeholder="원">` : ''}
+        ${discType === 'percent' ? `<div style="display:flex;align-items:center;gap:4px;">
+          <input type="number" min="0" max="100" value="${discVal}"
+            onchange="feMonthDrafts['${ym}']={type:'percent',val:parseFloat(this.value)||0};feRenderMonthTable()"
+            style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:.72rem;" placeholder="0">
+          <span style="font-size:.7rem;color:var(--muted);">%</span>
+        </div>` : ''}
+        ${discType === '' ? `<span style="font-size:.72rem;color:var(--muted);">-</span>` : ''}
+      </div>
+      <div style="text-align:right;">
+        ${hasDisc ? `<div style="font-size:.7rem;color:var(--muted);text-decoration:line-through;">${Math.round(base).toLocaleString('ko-KR')}</div>
+          <div style="font-size:.78rem;font-weight:600;color:var(--green);">${Math.round(actual).toLocaleString('ko-KR')}</div>
+          ${saved>0?`<div style="font-size:.65rem;color:var(--green);">-${Math.round(saved).toLocaleString('ko-KR')}</div>`:''}` :
+          `<div style="font-size:.78rem;color:var(--text);">${base?Math.round(base).toLocaleString('ko-KR'):'-'}</div>`}
+      </div>
+      <button onclick="delete feMonthDrafts['${ym}'];feRenderMonthTable()" title="초기화"
+        style="background:none;border:none;color:${hasDisc?'var(--red)':'var(--border)'};cursor:pointer;font-size:.8rem;padding:0;">✕</button>
+    </div>`;
+  }).join('');
+  // 이번 달 행으로 스크롤
+  setTimeout(() => {
+    const rows = table.querySelectorAll('div[style*="rgba(83,74,183"]');
+    if (rows[0]) rows[0].scrollIntoView({block:'nearest'});
+  }, 50);
+}
 
 function openFixedExpenseModal() {
-  editingFeId = null;
-  feCat = null;
+  editingFeId = null; feCat = null; feMonthDrafts = {};
   document.getElementById('fe-name').value = '';
   document.getElementById('fe-amount').value = '';
   document.getElementById('fe-day').value = '';
+  document.querySelectorAll('[id^="fecat-"]').forEach(b => b.classList.remove('selected'));
   document.getElementById('fe-modal-title').textContent = '📌 고정지출 항목 추가';
   document.getElementById('fe-save-btn').textContent = '추가';
-  document.querySelectorAll('[id^="fecat-"]').forEach(b => b.classList.remove('selected'));
+  feRenderMonthTable();
   document.getElementById('feModalOverlay').classList.add('active');
 }
 function editFe(id) {
   const item = (appData.fixedExpenses || []).find(f => f.id === id);
   if (!item) return;
-  editingFeId = id;
-  feCat = item.cat;
+  editingFeId = id; feCat = item.cat;
   document.getElementById('fe-name').value = item.name;
   document.getElementById('fe-amount').value = item.amount;
   document.getElementById('fe-day').value = item.day || '';
-  document.getElementById('fe-modal-title').textContent = '✏️ 고정지출 항목 수정';
-  document.getElementById('fe-save-btn').textContent = '수정 완료';
+  // 기존 할인 데이터 불러오기
+  const saved = (appData.feDiscounts || {})[id] || {};
+  feMonthDrafts = {};
+  Object.entries(saved).forEach(([ym, v]) => {
+    if (v && v.type) {
+      feMonthDrafts[ym] = { type: v.type, val: v.val };
+    } else if (v != null) {
+      // 구버전 호환: 단순 숫자값
+      feMonthDrafts[ym] = { type: 'amount', val: v };
+    }
+  });
   document.querySelectorAll('[id^="fecat-"]').forEach(b => b.classList.remove('selected'));
   if (item.cat) document.getElementById('fecat-' + item.cat)?.classList.add('selected');
+  document.getElementById('fe-modal-title').textContent = '✏️ 고정지출 항목 수정';
+  document.getElementById('fe-save-btn').textContent = '수정 완료';
+  feRenderMonthTable();
   document.getElementById('feModalOverlay').classList.add('active');
 }
 function closeFeModal() {
   document.getElementById('feModalOverlay').classList.remove('active');
-  editingFeId = null;
+  editingFeId = null; feMonthDrafts = {};
 }
 document.getElementById('feModalOverlay').addEventListener('click', function(e){ if(e.target===this) closeFeModal(); });
-
 function setFeCat(cat) {
   feCat = cat;
   document.querySelectorAll('[id^="fecat-"]').forEach(b => b.classList.remove('selected'));
@@ -1844,24 +1977,35 @@ function saveFixedExpense() {
   if (!feCat) { showToast('❌ 카테고리를 선택해주세요'); return; }
   if (day !== null && (day < 1 || day > 31)) { showToast('❌ 출금일은 1~31 사이로 입력해주세요'); return; }
   if (!appData.fixedExpenses) appData.fixedExpenses = [];
-
+  if (!appData.feDiscounts) appData.feDiscounts = {};
+  const itemId = editingFeId || Date.now();
   if (editingFeId) {
-    // 수정 모드
     const idx = appData.fixedExpenses.findIndex(f => f.id === editingFeId);
     if (idx !== -1) appData.fixedExpenses[idx] = { id: editingFeId, name, amount, cat: feCat, day };
-    saveData(appData); closeFeModal();
-    renderFixedExpenses(); renderSpending(); renderCardDonut();
-    showToast('✅ 고정지출 항목이 수정되었습니다');
   } else {
-    // 추가 모드
-    appData.fixedExpenses.push({ id: Date.now(), name, amount, cat: feCat, day });
-    saveData(appData); closeFeModal();
-    renderFixedExpenses();
-    showToast('✅ 고정지출 항목이 추가되었습니다');
+    appData.fixedExpenses.push({ id: itemId, name, amount, cat: feCat, day });
   }
+  // 월별 할인 저장 (입력된 것만)
+  const discObj = {};
+  Object.entries(feMonthDrafts).forEach(([ym, d]) => {
+    if (d && d.type && d.val != null && !isNaN(d.val)) {
+      discObj[ym] = { type: d.type, val: d.val };
+    }
+  });
+  if (Object.keys(discObj).length) {
+    appData.feDiscounts[itemId] = discObj;
+  } else {
+    delete appData.feDiscounts[itemId];
+  }
+  saveData(appData); closeFeModal();
+  renderFixedExpenses(); renderSpending(); renderCardDonut();
+  showToast(editingFeId ? '✅ 항목이 수정되었습니다' : '✅ 항목이 추가되었습니다');
 }
+
 function removeFixedExpense(id) {
   appData.fixedExpenses = (appData.fixedExpenses || []).filter(f => f.id !== id);
+  // 관련 할인 데이터도 삭제
+  if (appData.feDiscounts) delete appData.feDiscounts[id];
   saveData(appData);
   renderFixedExpenses();
   showToast('🗑️ 항목이 삭제되었습니다');
@@ -1871,37 +2015,52 @@ function renderFixedExpenses() {
   const totalRow = document.getElementById('fe-total-row');
   const totalAmt = document.getElementById('fe-total-amt');
   const items    = appData.fixedExpenses || [];
+  // 팝업 닫기
+  document.querySelectorAll('.fe-discount-popup').forEach(el => el.remove());
   if (!items.length) {
     list.innerHTML = '<div class="fe-empty">고정지출 항목을 추가해 주세요</div>';
     totalRow.style.display = 'none';
     return;
   }
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const sorted = [...items].sort((a, b) => {
     if (a.day == null && b.day == null) return 0;
     if (a.day == null) return 1;
     if (b.day == null) return -1;
     return a.day - b.day;
   });
-  const total = items.reduce((s, f) => s + f.amount, 0);
+  // 합계는 이번 달 실제 금액(할인 반영)으로 계산
+  const total = items.reduce((s, f) => s + getFeAmount(f, ym), 0);
   list.innerHTML = sorted.map(f => {
     const cat = FE_CATS[f.cat] || { icon:'📌', label:'기타' };
     const dayBadge = f.day
       ? `<span style="font-size:.67rem;background:var(--purple-light);color:var(--purple);border-radius:20px;padding:2px 8px;font-weight:500;white-space:nowrap;">매월 ${f.day}일</span>`
       : `<span style="font-size:.67rem;color:var(--muted);">출금일 미설정</span>`;
-    return `<div class="fe-item">
+    const discountedAmt = getFeDiscount(f, ym);
+    const hasDiscount = discountedAmt !== null && discountedAmt !== f.amount;
+    const amtHtml = hasDiscount
+      ? `<div style="text-align:right;">
+          <div style="font-size:.7rem;color:var(--muted);text-decoration:line-through;">${fmt(f.amount)}</div>
+          <div class="fe-amt" style="color:var(--green);">-${fmt(discountedAmt)}</div>
+          <div style="font-size:.65rem;color:var(--green);">-${fmt(f.amount - discountedAmt)} 할인</div>
+        </div>`
+      : `<div class="fe-amt">-${fmt(f.amount)}</div>`;
+    return `<div class="fe-item" data-fe-id="${f.id}">
       <div class="fe-icon">${cat.icon}</div>
       <div class="fe-info">
         <div class="fe-name">${f.name}</div>
         <div class="fe-cat" style="display:flex;align-items:center;gap:6px;margin-top:3px;">${dayBadge}<span style="color:var(--muted);font-size:.68rem;">${cat.label}</span></div>
       </div>
-      <div class="fe-amt">-${fmt(f.amount)}</div>
-      <button class="rm-btn" onclick="editFe(${f.id})" style="color:var(--purple);margin-left:4px;" title="수정">✎</button>
+      ${amtHtml}
+      <button class="rm-btn" onclick="editFe(${f.id})" style="color:var(--purple);margin-left:4px;" title="항목 수정">✎</button>
       <button class="rm-btn" onclick="removeFixedExpense(${f.id})" style="margin-left:2px;">✕</button>
     </div>`;
   }).join('');
   totalRow.style.display = 'flex';
   totalAmt.textContent = '-' + fmt(total);
 }
+
 
 // ── 경량 드래그/리사이즈 대시보드 (외부 라이브러리 없음) ──
 const DASH_LAYOUT_KEY = 'dashLayout_v2';
