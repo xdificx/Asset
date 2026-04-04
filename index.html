@@ -777,9 +777,15 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
       <label class="form-label">항목 이름</label>
       <input class="form-input" id="fe-name" placeholder="예: 통신비, 유튜브 프리미엄">
     </div>
-    <div class="form-group">
-      <label class="form-label">월 금액 (원)</label>
-      <input class="form-input" id="fe-amount" type="number" placeholder="15000">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">월 금액 (원)</label>
+        <input class="form-input" id="fe-amount" type="number" placeholder="15000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">출금일 (매월 몇 일)</label>
+        <input class="form-input" id="fe-day" type="number" min="1" max="31" placeholder="예: 25">
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">카테고리</label>
@@ -1649,6 +1655,7 @@ function openFixedExpenseModal() {
   feCat = null;
   document.getElementById('fe-name').value = '';
   document.getElementById('fe-amount').value = '';
+  document.getElementById('fe-day').value = '';
   document.querySelectorAll('[id^="fecat-"]').forEach(b => b.classList.remove('selected'));
   document.getElementById('feModalOverlay').classList.add('active');
 }
@@ -1663,10 +1670,13 @@ function setFeCat(cat) {
 function saveFixedExpense() {
   const name   = document.getElementById('fe-name').value.trim();
   const amount = parseFloat(document.getElementById('fe-amount').value);
+  const dayVal = document.getElementById('fe-day').value;
+  const day    = dayVal ? parseInt(dayVal) : null;
   if (!name || !amount || amount <= 0) { showToast('❌ 이름과 금액을 입력해주세요'); return; }
   if (!feCat) { showToast('❌ 카테고리를 선택해주세요'); return; }
+  if (day !== null && (day < 1 || day > 31)) { showToast('❌ 출금일은 1~31 사이로 입력해주세요'); return; }
   if (!appData.fixedExpenses) appData.fixedExpenses = [];
-  appData.fixedExpenses.push({ id: Date.now(), name, amount, cat: feCat });
+  appData.fixedExpenses.push({ id: Date.now(), name, amount, cat: feCat, day });
   saveData(appData);
   closeFeModal();
   renderFixedExpenses();
@@ -1688,12 +1698,25 @@ function renderFixedExpenses() {
     totalRow.style.display = 'none';
     return;
   }
+  // 출금일 순 정렬 (출금일 없으면 맨 뒤)
+  const sorted = [...items].sort((a, b) => {
+    if (a.day == null && b.day == null) return 0;
+    if (a.day == null) return 1;
+    if (b.day == null) return -1;
+    return a.day - b.day;
+  });
   const total = items.reduce((s, f) => s + f.amount, 0);
-  list.innerHTML = items.map(f => {
+  list.innerHTML = sorted.map(f => {
     const cat = FE_CATS[f.cat] || { icon:'📌', label:'기타' };
+    const dayBadge = f.day
+      ? `<span style="font-size:.67rem;background:var(--purple-light);color:var(--purple);border-radius:20px;padding:2px 8px;font-weight:500;white-space:nowrap;">매월 ${f.day}일</span>`
+      : `<span style="font-size:.67rem;color:var(--muted);">출금일 미설정</span>`;
     return `<div class="fe-item">
       <div class="fe-icon">${cat.icon}</div>
-      <div class="fe-info"><div class="fe-name">${f.name}</div><div class="fe-cat">${cat.label}</div></div>
+      <div class="fe-info">
+        <div class="fe-name">${f.name}</div>
+        <div class="fe-cat" style="display:flex;align-items:center;gap:6px;margin-top:3px;">${dayBadge}<span style="color:var(--muted);font-size:.68rem;">${cat.label}</span></div>
+      </div>
       <div class="fe-amt">-${fmt(f.amount)}</div>
       <button class="rm-btn" onclick="removeFixedExpense(${f.id})" style="margin-left:6px;">✕</button>
     </div>`;
