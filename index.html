@@ -1132,14 +1132,6 @@ function removeStock(id){
   appData.stocks=appData.stocks.filter(s=>s.id!==id);
   saveData(appData); renderAll(); showToast('🗑️ 종목 삭제됨');
 }
-async function fetchAllStocks() {
-  const btn=document.getElementById('refreshBtn'); btn.classList.add('loading');
-  for (let s of appData.stocks) {
-    const r=await fetchStockPrice(s.ticker);
-    if (r){s.currentPrice=r.price;s.change=r.change;s.changePct=r.changePct;s.currency=r.currency;s.lastFetched=new Date().toLocaleTimeString('ko-KR');}
-  }
-  saveData(appData); renderAll(); btn.classList.remove('loading');
-}
 function renderStocks() {
   const tbody=document.getElementById('stockTableBody');
   if (!appData.stocks.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;font-size:.8rem;">종목을 추가하면 실시간 주가를 불러옵니다</td></tr>';return;}
