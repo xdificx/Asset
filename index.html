@@ -5,12 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Finance Dashboard</title>
 
-<!-- 1) Preconnect: 브라우저가 미리 연결 수립 → 폰트 대기시간 단축 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<!-- 2) Google Fonts: display=swap → 폰트 로딩 중에도 텍스트 즉시 표시 -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- 시스템 폰트 사용 — 외부 요청 없음 -->
 <style>
 :root {
   --bg:#f4f3f8; --surface:#fff; --surface2:#f8f7fc; --border:#ebe9f4;
@@ -19,9 +14,12 @@
   --gray:#888780; --gray-light:#F1EFE8; --gray-dark:#2C2C2A;
   --red:#E24B4A; --red-light:#FCEBEB; --gold:#BA7517;
   --text:#2C2C2A; --muted:#888780; --sw:220px;
+  /* 시스템 폰트 — 외부 다운로드 없음 */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', '나눔고딕', sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;display:flex;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-height:100vh;display:flex;}
 
 /* ── Sidebar ── */
 .sidebar{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;padding:28px 0 24px;}
@@ -45,8 +43,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
 .topbar-title{font-size:1rem;font-weight:600;color:var(--text);}
 .topbar-right{display:flex;align-items:center;gap:12px;}
-.topbar-date{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);}
-.refresh-btn{background:var(--purple);border:none;color:#fff;padding:7px 16px;border-radius:8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:.78rem;font-weight:500;transition:background .2s;display:flex;align-items:center;gap:6px;}
+.topbar-date{font-family:var(--font-mono);font-size:.7rem;color:var(--muted);}
+.refresh-btn{background:var(--purple);border:none;color:#fff;padding:7px 16px;border-radius:8px;cursor:pointer;font-family:var(--font-sans);font-size:.78rem;font-weight:500;transition:background .2s;display:flex;align-items:center;gap:6px;}
 .refresh-btn:hover{background:var(--purple-dark);}
 .refresh-btn.loading .icon{animation:spin 1s linear infinite;display:inline-block;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -69,12 +67,12 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .total-banner{background:var(--purple-dark);border-radius:16px;padding:28px 32px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;}
 .total-banner::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:radial-gradient(circle,rgba(175,169,236,.14) 0%,transparent 70%);pointer-events:none;}
 .total-label{font-size:.72rem;color:var(--purple-mid);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
-.total-amount{font-family:'DM Mono',monospace;font-size:2.4rem;font-weight:500;color:#fff;}
+.total-amount{font-family:var(--font-mono);font-size:2.4rem;font-weight:500;color:#fff;}
 .total-amount .cur{font-size:1.4rem;color:var(--purple-mid);margin-right:4px;}
 .total-stats{display:flex;gap:32px;}
 .st-item{text-align:right;}
 .st-label{font-size:.7rem;color:var(--purple-mid);margin-bottom:4px;}
-.st-val{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;}
+.st-val{font-family:var(--font-mono);font-size:1.1rem;font-weight:500;}
 .st-val.up{color:#a8e77b;} .st-val.down{color:#ff9e9e;} .st-val.neu{color:#fff;}
 
 /* ── Summary cards ── */
@@ -88,9 +86,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .bd-green{background:var(--green-light);color:var(--green);}
 .bd-gray{background:var(--gray-light);color:var(--gray-dark);}
 .sum-name{font-size:.76rem;color:var(--muted);margin-bottom:4px;}
-.sum-amt{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:500;color:var(--text);margin-bottom:4px;}
+.sum-amt{font-family:var(--font-mono);font-size:1.4rem;font-weight:500;color:var(--text);margin-bottom:4px;}
 .sum-sub{font-size:.73rem;color:var(--muted);}
-.sum-sub .hl{color:var(--green);font-family:'DM Mono',monospace;font-weight:500;}
+.sum-sub .hl{color:var(--green);font-family:var(--font-mono);font-weight:500;}
 .sum-goto{font-size:.72rem;color:var(--purple);margin-top:10px;}
 .prog-wrap{margin-top:10px;}
 .prog-lbl{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:5px;}
@@ -102,7 +100,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .chart-wrap{display:flex;align-items:center;gap:24px;}
 .donut-container{position:relative;width:150px;height:150px;flex-shrink:0;}
 .donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
-.donut-pct{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:500;color:var(--text);}
+.donut-pct{font-family:var(--font-mono);font-size:1.2rem;font-weight:500;color:var(--text);}
 .donut-sub{font-size:.66rem;color:var(--muted);}
 .legend{flex:1;}
 .leg-item{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);}
@@ -111,8 +109,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .leg-dot{width:9px;height:9px;border-radius:2px;}
 .leg-name{font-size:.78rem;color:var(--text);}
 .leg-right{text-align:right;}
-.leg-pct{font-family:'DM Mono',monospace;font-size:.83rem;font-weight:500;}
-.leg-amt{font-size:.68rem;color:var(--muted);font-family:'DM Mono',monospace;}
+.leg-pct{font-family:var(--font-mono);font-size:.83rem;font-weight:500;}
+.leg-amt{font-size:.68rem;color:var(--muted);font-family:var(--font-mono);}
 
 /* ── Calendar (compact, for main dashboard) ── */
 .mini-cal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
@@ -121,7 +119,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .cal-nav-btn:hover{background:var(--purple-light);color:var(--purple);border-color:var(--purple-mid);}
 .cal-nav{display:flex;align-items:center;gap:8px;}
 .cal-month-title{font-size:.88rem;font-weight:600;color:var(--text);min-width:96px;text-align:center;}
-.cal-today-btn{background:var(--purple-light);border:none;color:var(--purple);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;font-family:'Noto Sans KR',sans-serif;}
+.cal-today-btn{background:var(--purple-light);border:none;color:var(--purple);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:500;font-family:var(--font-sans);}
 .cal-today-btn:hover{background:var(--purple);color:#fff;}
 .cal-grid{width:100%;border-collapse:collapse;}
 .cal-grid th{padding:8px 0;text-align:center;font-size:.68rem;font-weight:500;color:var(--muted);border-bottom:1px solid var(--border);}
@@ -136,10 +134,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .cal-dnum{font-size:.74rem;font-weight:500;color:var(--text);}
 .cal-cell.sun .cal-dnum{color:var(--red);} .cal-cell.sat .cal-dnum{color:var(--purple);}
 .cal-dots{padding:0 4px 3px;display:flex;flex-direction:column;gap:2px;}
-.cal-chip{font-size:.58rem;padding:1px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace;}
+.cal-chip{font-size:.58rem;padding:1px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-mono);}
 .cal-chip.income{background:var(--green-light);color:var(--green);}
 .cal-chip.expense{background:var(--red-light);color:var(--red);}
-.cal-net{position:absolute;bottom:3px;right:4px;font-size:.58rem;font-family:'DM Mono',monospace;}
+.cal-net{position:absolute;bottom:3px;right:4px;font-size:.58rem;font-family:var(--font-mono);}
 .cal-net.pos{color:var(--green);} .cal-net.neg{color:var(--red);}
 
 /* ── Right panel (selected day) in main dashboard ── */
@@ -150,7 +148,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .day-sum-row{display:flex;gap:8px;margin-bottom:14px;}
 .day-sum-box{flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--border);}
 .day-sum-lbl{font-size:.68rem;color:var(--muted);margin-bottom:3px;}
-.day-sum-val{font-family:'DM Mono',monospace;font-size:.92rem;font-weight:500;}
+.day-sum-val{font-family:var(--font-mono);font-size:.92rem;font-weight:500;}
 .day-sum-val.inc{color:var(--green);} .day-sum-val.exp{color:var(--red);} .day-sum-val.neu{color:var(--purple);}
 .day-tx-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;}
 .day-tx-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);}
@@ -158,7 +156,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .day-tx-info{flex:1;min-width:0;}
 .day-tx-name{font-size:.78rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .day-tx-cat{font-size:.65rem;color:var(--muted);}
-.day-tx-amt{font-family:'DM Mono',monospace;font-size:.82rem;font-weight:500;white-space:nowrap;}
+.day-tx-amt{font-family:var(--font-mono);font-size:.82rem;font-weight:500;white-space:nowrap;}
 .day-tx-amt.income{color:var(--green);} .day-tx-amt.expense{color:var(--red);}
 .day-empty{text-align:center;color:var(--muted);padding:20px 0;font-size:.78rem;}
 
@@ -171,7 +169,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px;}
 .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;}
 .stat-box-lbl{font-size:.72rem;color:var(--muted);margin-bottom:5px;}
-.stat-box-val{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:500;color:var(--text);}
+.stat-box-val{font-family:var(--font-mono);font-size:1.3rem;font-weight:500;color:var(--text);}
 .stat-box-val.purple{color:var(--purple);} .stat-box-val.green{color:var(--green);}
 .stat-box-val.up{color:var(--green);} .stat-box-val.down{color:var(--red);}
 
@@ -179,7 +177,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .detail-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
 .detail-row:last-child{border-bottom:none;}
 .detail-label{font-size:.78rem;color:var(--muted);}
-.detail-value{font-family:'DM Mono',monospace;font-size:.83rem;color:var(--text);}
+.detail-value{font-family:var(--font-mono);font-size:.83rem;color:var(--text);}
 .detail-value.accent{color:var(--purple);} .detail-value.green{color:var(--green);} .detail-value.gold{color:var(--gold);}
 
 /* ── Item block ── */
@@ -202,9 +200,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .stk-table tr:last-child td{border-bottom:none;}
 .stk-table tr:hover td{background:var(--surface2);}
 .stk-name{font-weight:500;color:var(--text);}
-.stk-ticker{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);margin-top:2px;}
-.price-mono{font-family:'DM Mono',monospace;}
-.chg-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:20px;font-family:'DM Mono',monospace;font-size:.74rem;font-weight:500;}
+.stk-ticker{font-family:var(--font-mono);font-size:.7rem;color:var(--muted);margin-top:2px;}
+.price-mono{font-family:var(--font-mono);}
+.chg-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:20px;font-family:var(--font-mono);font-size:.74rem;font-weight:500;}
 .up-badge{background:var(--green-light);color:var(--green);}
 .down-badge{background:var(--red-light);color:var(--red);}
 .live-badge{font-size:.67rem;padding:2px 8px;border-radius:20px;background:var(--green-light);color:var(--green);font-weight:500;display:flex;align-items:center;gap:4px;}
@@ -215,14 +213,14 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 /* ── Spending page ── */
 .week-section{margin-bottom:24px;}
 .week-title{font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.week-title span{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--muted);font-weight:400;}
+.week-title span{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);font-weight:400;}
 .tx-item{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);margin-bottom:7px;}
 .tx-cat-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
 .tx-info{flex:1;min-width:0;}
 .tx-name{font-size:.83rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tx-cat-lbl{font-size:.7rem;color:var(--muted);}
-.tx-date-lbl{font-size:.68rem;color:var(--muted);font-family:'DM Mono',monospace;}
-.tx-amount{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;white-space:nowrap;}
+.tx-date-lbl{font-size:.68rem;color:var(--muted);font-family:var(--font-mono);}
+.tx-amount{font-family:var(--font-mono);font-size:.88rem;font-weight:500;white-space:nowrap;}
 .tx-amount.income{color:var(--green);} .tx-amount.expense{color:var(--red);}
 .tx-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:3px 6px;border-radius:4px;transition:color .15s;}
 .tx-remove:hover{color:var(--red);}
@@ -234,11 +232,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .sp-leg-color{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
 .sp-leg-name{font-size:.8rem;color:var(--text);}
 .sp-leg-right{text-align:right;}
-.sp-leg-amt{font-family:'DM Mono',monospace;font-size:.82rem;font-weight:500;color:var(--text);}
-.sp-leg-pct{font-size:.68rem;color:var(--muted);font-family:'DM Mono',monospace;}
+.sp-leg-amt{font-family:var(--font-mono);font-size:.82rem;font-weight:500;color:var(--text);}
+.sp-leg-pct{font-size:.68rem;color:var(--muted);font-family:var(--font-mono);}
 
 /* ── Add Btn ── */
-.add-btn{display:flex;align-items:center;gap:6px;background:transparent;border:1px dashed var(--border);color:var(--muted);padding:6px 13px;border-radius:8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:.76rem;transition:all .2s;}
+.add-btn{display:flex;align-items:center;gap:6px;background:transparent;border:1px dashed var(--border);color:var(--muted);padding:6px 13px;border-radius:8px;cursor:pointer;font-family:var(--font-sans);font-size:.76rem;transition:all .2s;}
 .add-btn:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-light);}
 
 /* ── Month nav (spending page) ── */
@@ -254,20 +252,20 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .modal h3{font-size:1rem;font-weight:600;margin-bottom:20px;color:var(--text);}
 .form-group{margin-bottom:14px;}
 .form-label{font-size:.74rem;color:var(--muted);margin-bottom:5px;display:block;font-weight:500;}
-.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 13px;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:.84rem;outline:none;transition:border-color .2s;}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 13px;border-radius:8px;font-family:var(--font-sans);font-size:.84rem;outline:none;transition:border-color .2s;}
 .form-input:focus{border-color:var(--purple);}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
-.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 18px;border-radius:8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:.82rem;transition:all .2s;}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 18px;border-radius:8px;cursor:pointer;font-family:var(--font-sans);font-size:.82rem;transition:all .2s;}
 .btn-cancel:hover{border-color:var(--gray);color:var(--text);}
-.btn-primary{background:var(--purple);border:none;color:#fff;padding:9px 20px;border-radius:8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:.82rem;font-weight:600;transition:background .2s;}
+.btn-primary{background:var(--purple);border:none;color:#fff;padding:9px 20px;border-radius:8px;cursor:pointer;font-family:var(--font-sans);font-size:.82rem;font-weight:600;transition:background .2s;}
 .btn-primary:hover{background:var(--purple-dark);}
 .type-toggle{display:flex;gap:8px;margin-bottom:16px;}
-.type-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:.83rem;font-weight:500;transition:all .15s;color:var(--muted);}
+.type-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:var(--font-sans);font-size:.83rem;font-weight:500;transition:all .15s;color:var(--muted);}
 .type-btn.ai{background:var(--green-light);color:var(--green);border-color:#C0DD97;}
 .type-btn.ae{background:var(--red-light);color:var(--red);border-color:#F09595;}
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px;}
-.cat-btn{padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:.72rem;text-align:center;transition:all .15s;color:var(--text);font-family:'Noto Sans KR',sans-serif;}
+.cat-btn{padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:.72rem;text-align:center;transition:all .15s;color:var(--text);font-family:var(--font-sans);}
 .cat-btn:hover{border-color:var(--purple-mid);background:var(--purple-light);}
 .cat-btn.selected{border-color:var(--purple);background:var(--purple-light);color:var(--purple);font-weight:500;}
 .cat-icon-lg{font-size:1.2rem;display:block;margin-bottom:3px;}
@@ -279,10 +277,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .fe-info{flex:1;min-width:0;}
 .fe-name{font-size:.83rem;font-weight:500;color:var(--text);}
 .fe-cat{font-size:.7rem;color:var(--muted);margin-top:1px;}
-.fe-amt{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--red);white-space:nowrap;}
+.fe-amt{font-family:var(--font-mono);font-size:.88rem;font-weight:500;color:var(--red);white-space:nowrap;}
 .fe-total-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--border);margin-top:4px;}
 .fe-total-lbl{font-size:.8rem;font-weight:600;color:var(--text);}
-.fe-total-amt{font-family:'DM Mono',monospace;font-size:1rem;font-weight:600;color:var(--red);}
+.fe-total-amt{font-family:var(--font-mono);font-size:1rem;font-weight:600;color:var(--red);}
 .fe-empty{text-align:center;color:var(--muted);padding:24px;font-size:.8rem;}
 
 /* ── 경량 드래그/리사이즈 대시보드 ── */
@@ -341,7 +339,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .tab-bar{display:none;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .tab-bar::-webkit-scrollbar{display:none;}
 .tab-bar-inner{display:flex;min-width:max-content;}
-.tab-item{display:flex;align-items:center;gap:6px;padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent;font-size:.8rem;color:var(--muted);white-space:nowrap;transition:all .15s;font-family:'Noto Sans KR',sans-serif;}
+.tab-item{display:flex;align-items:center;gap:6px;padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent;font-size:.8rem;color:var(--muted);white-space:nowrap;transition:all .15s;font-family:var(--font-sans);}
 .tab-item:hover{color:var(--purple);background:var(--purple-light);}
 .tab-item.active{color:var(--purple);border-bottom-color:var(--purple);font-weight:500;}
 .tab-item-icon{font-size:.9rem;}
@@ -547,11 +545,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
             <div style="display:flex;flex-direction:column;gap:4px;width:100%;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
                 <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0;"></div><span style="font-size:.68rem;color:var(--muted);">수입</span></div>
-                <span style="font-family:'DM Mono',monospace;font-size:.72rem;font-weight:600;color:#E24B4A;" id="ratio-inc-pct">0%</span>
+                <span style="font-family:var(--font-mono);font-size:.72rem;font-weight:600;color:#E24B4A;" id="ratio-inc-pct">0%</span>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
                 <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#378ADD;flex-shrink:0;"></div><span style="font-size:.68rem;color:var(--muted);">지출</span></div>
-                <span style="font-family:'DM Mono',monospace;font-size:.72rem;font-weight:600;color:#378ADD;" id="ratio-exp-pct">0%</span>
+                <span style="font-family:var(--font-mono);font-size:.72rem;font-weight:600;color:#378ADD;" id="ratio-exp-pct">0%</span>
               </div>
             </div>
           </div>
@@ -559,12 +557,12 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
           <div style="display:flex;flex-direction:column;gap:8px;flex:6.5;">
             <div style="background:#FCEBEB;border-radius:8px;padding:11px 16px;">
               <div style="font-size:.82rem;color:#E24B4A;margin-bottom:4px;font-weight:600;">이번 달 수입</div>
-              <div style="font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:700;color:#E24B4A;" id="sp-income">₩0</div>
+              <div style="font-family:var(--font-mono);font-size:1.2rem;font-weight:700;color:#E24B4A;" id="sp-income">₩0</div>
               <div style="font-size:.75rem;color:#E24B4A;margin-top:3px;opacity:.75;" id="ratio-inc-pct">0%</div>
             </div>
             <div style="background:#E6F1FB;border-radius:8px;padding:11px 16px;">
               <div style="font-size:.82rem;color:#185FA5;margin-bottom:4px;font-weight:600;">이번 달 지출</div>
-              <div style="font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:700;color:#185FA5;" id="sp-expense">₩0</div>
+              <div style="font-family:var(--font-mono);font-size:1.2rem;font-weight:700;color:#185FA5;" id="sp-expense">₩0</div>
               <div style="font-size:.75rem;color:#185FA5;margin-top:3px;opacity:.75;" id="ratio-exp-pct">0%</div>
             </div>
           </div>
@@ -586,7 +584,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
               <circle id="card-arc-check" cx="60" cy="60" r="44" fill="none" stroke="#97C459" stroke-width="16" stroke-dasharray="0 276" stroke-dashoffset="69" style="transition:all .8s ease" transform="rotate(-90 60 60)"/>
             </svg>
             <div class="donut-center">
-              <div style="font-family:'DM Mono',monospace;font-size:.85rem;font-weight:600;color:var(--text);" id="card-total-center">₩0</div>
+              <div style="font-family:var(--font-mono);font-size:.85rem;font-weight:600;color:var(--text);" id="card-total-center">₩0</div>
               <div style="font-size:.62rem;color:var(--muted);">총 이용</div>
             </div>
           </div>
@@ -598,7 +596,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
                 <span style="font-size:.78rem;color:var(--purple-dark);font-weight:500;">신용카드</span>
               </div>
               <div style="text-align:right;">
-                <div style="font-family:'DM Mono',monospace;font-size:.82rem;font-weight:600;color:var(--purple);" id="card-credit-amt">₩0</div>
+                <div style="font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--purple);" id="card-credit-amt">₩0</div>
                 <div style="font-size:.65rem;color:var(--purple-mid);" id="card-credit-pct">0%</div>
               </div>
             </div>
@@ -608,7 +606,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
                 <span style="font-size:.78rem;color:var(--green);font-weight:500;">체크카드</span>
               </div>
               <div style="text-align:right;">
-                <div style="font-family:'DM Mono',monospace;font-size:.82rem;font-weight:600;color:var(--green);" id="card-check-amt">₩0</div>
+                <div style="font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--green);" id="card-check-amt">₩0</div>
                 <div style="font-size:.65rem;color:var(--green-mid);" id="card-check-pct">0%</div>
               </div>
             </div>
@@ -680,8 +678,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
         <button class="month-nav-btn" onclick="txNextMonth()">›</button>
       </div>
       <div style="display:flex;gap:10px;">
-        <div style="font-size:.78rem;color:var(--green);background:var(--green-light);padding:5px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-weight:500;" id="tx-month-income">수입 ₩0</div>
-        <div style="font-size:.78rem;color:var(--red);background:var(--red-light);padding:5px 12px;border-radius:20px;font-family:'DM Mono',monospace;font-weight:500;" id="tx-month-expense">지출 ₩0</div>
+        <div style="font-size:.78rem;color:var(--green);background:var(--green-light);padding:5px 12px;border-radius:20px;font-family:var(--font-mono);font-weight:500;" id="tx-month-income">수입 ₩0</div>
+        <div style="font-size:.78rem;color:var(--red);background:var(--red-light);padding:5px 12px;border-radius:20px;font-family:var(--font-mono);font-weight:500;" id="tx-month-expense">지출 ₩0</div>
       </div>
     </div>
 
@@ -1154,7 +1152,7 @@ function renderStocks() {
       <td class="price-mono">${cur?(s.currency==='USD'?'$'+value.toFixed(0):fmt(value)):'-'}</td>
       <td>
         ${cur?`<span class="chg-badge ${isUp?'up-badge':'down-badge'}">${isUp?'▲':'▼'} ${Math.abs(pnlPct).toFixed(2)}%</span>
-        <div style="font-size:.68rem;font-family:'DM Mono',monospace;color:${isUp?'var(--green)':'var(--red)'};">${pnlAmt>=0?'+':''}${fmt(pnlAmt)}</div>`
+        <div style="font-size:.68rem;font-family:var(--font-mono);color:${isUp?'var(--green)':'var(--red)'};">${pnlAmt>=0?'+':''}${fmt(pnlAmt)}</div>`
         :'<span style="color:var(--muted);font-size:.75rem">조회중...</span>'}
       </td>
       <td><button onclick="removeStock(${s.id})" class="rm-btn">✕</button></td>
@@ -1548,14 +1546,14 @@ function renderWeeklyChart(y,m,txs) {
       return `<div>
         <div style="font-size:.72rem;font-weight:500;color:var(--text);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;">
           <span>${w.w}주차</span>
-          <span style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);">${w.inc>0&&w.exp>0?'저축 '+fmt(w.inc-w.exp):''}</span>
+          <span style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted);">${w.inc>0&&w.exp>0?'저축 '+fmt(w.inc-w.exp):''}</span>
         </div>
         <!-- 수입 막대 -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:${GAP}px;">
           <div style="width:28px;font-size:.65rem;color:var(--green);text-align:right;flex-shrink:0;">수입</div>
           <div style="flex:1;height:${BAR_H}px;background:var(--green-light);border-radius:6px;overflow:hidden;position:relative;">
             <div style="height:100%;width:${incW}%;background:var(--green-mid);border-radius:6px;transition:width .6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;">
-              ${w.inc>0?`<span style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--green);white-space:nowrap;">${fmt(w.inc)}</span>`:''}
+              ${w.inc>0?`<span style="font-family:var(--font-mono);font-size:.65rem;color:var(--green);white-space:nowrap;">${fmt(w.inc)}</span>`:''}
             </div>
             ${w.inc===0?`<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.65rem;color:var(--muted);">-</span>`:''}
           </div>
@@ -1565,7 +1563,7 @@ function renderWeeklyChart(y,m,txs) {
           <div style="width:28px;font-size:.65rem;color:var(--red);text-align:right;flex-shrink:0;">지출</div>
           <div style="flex:1;height:${BAR_H}px;background:var(--red-light);border-radius:6px;overflow:hidden;position:relative;">
             <div style="height:100%;width:${expW}%;background:var(--red);opacity:.75;border-radius:6px;transition:width .6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;">
-              ${w.exp>0?`<span style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--red);white-space:nowrap;">${fmt(w.exp)}</span>`:''}
+              ${w.exp>0?`<span style="font-family:var(--font-mono);font-size:.65rem;color:var(--red);white-space:nowrap;">${fmt(w.exp)}</span>`:''}
             </div>
             ${w.exp===0?`<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.65rem;color:var(--muted);">-</span>`:''}
           </div>
