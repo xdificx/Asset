@@ -940,12 +940,12 @@ function switchPage(p) {
   // 모바일 네비: 선택된 탭이 보이도록 스크롤
   const mnavItem=document.getElementById('mnav-'+p);
   if (mnavItem) mnavItem.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-  if (p==='dashboard') { renderCal(); }
-  if (p==='spending') { renderSpending(); }
-  if (p==='txmanage') { renderTxManage(); }
-  if (p==='deposit') { renderDepStats(); }
-  if (p==='savings') { renderSavStats(); }
-  if (p==='stock') { renderStkStats(); if(appData.stocks.length>0) fetchAllStocks(); }
+  if (p==='dashboard') { renderTotals(); renderCal(); }
+  if (p==='spending')  { renderSpending(); renderFixedExpenses(); renderCardDonut(); }
+  if (p==='txmanage')  { renderTxManage(); }
+  if (p==='deposit')   { renderDeposits(); renderDepStats(); }
+  if (p==='savings')   { renderSavings(); renderSavStats(); }
+  if (p==='stock')     { renderStocks(); renderStkStats(); if(appData.stocks.length>0) fetchAllStocks(); }
 }
 
 // ── Asset Modals ──
@@ -1938,18 +1938,42 @@ loadDashLayout();
 
 
 
+// ── 초기 실행 ──
+// 1) 현재 보이는 페이지(dashboard)만 즉시 렌더링 → 나머지는 탭 전환 시 렌더링
 function renderAll() {
-  renderDeposits(); renderSavings(); renderStocks(); renderTotals();
-  renderDepStats(); renderSavStats(); renderStkStats();
-  renderCal(); renderTxManage(); renderSpending();
-  renderFixedExpenses(); renderCardDonut();
+  // 공통 (항상 필요)
+  renderTotals();
+  // 현재 활성 페이지만 렌더링
+  const active = document.querySelector('.page.active');
+  if (!active) return;
+  const pid = active.id;
+  if (pid === 'page-dashboard') { renderCal(); }
+  if (pid === 'page-spending')  { renderSpending(); renderFixedExpenses(); renderCardDonut(); }
+  if (pid === 'page-txmanage') { renderTxManage(); }
+  if (pid === 'page-deposit')  { renderDeposits(); renderDepStats(); }
+  if (pid === 'page-savings')  { renderSavings(); renderSavStats(); }
+  if (pid === 'page-stock')    { renderStocks(); renderStkStats(); }
 }
+
+// 2) 첫 화면(dashboard)에 필요한 것만 렌더링
+renderTotals();
+renderCal();
+
+// 3) 나머지는 첫 프레임 이후 비동기로 처리 (화면 차단 없음)
+requestAnimationFrame(() => {
+  renderDeposits(); renderSavings(); renderStocks();
+  renderDepStats(); renderSavStats(); renderStkStats();
+  renderTxManage(); renderSpending();
+  renderFixedExpenses(); renderCardDonut();
+});
+
+// 4) Sheets 동기화는 3초 뒤 백그라운드에서 실행 → 초기 로딩 완전히 무관
+setTimeout(() => { loadFromSheets(); }, 3000);
+
 async function refreshAll(){showToast('🔄 데이터 새로고침 중...');await fetchAllStocks();renderAll();}
 // 30초마다 자동 시세 갱신
 setInterval(async()=>{ if(appData.stocks.length>0) await fetchAllStocks(); }, 30000);
 
-renderAll();
-loadFromSheets();
 
 </script>
 </body>
