@@ -936,8 +936,39 @@ function showToast(msg) {
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 function calKey(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
-function getTx(ds) { return (appData.transactions||[]).filter(t=>t.date===ds); }
-function getTxMonth(y,m) { const p=`${y}-${String(m+1).padStart(2,'0')}`; return (appData.transactions||[]).filter(t=>t.date.startsWith(p)); }
+// 특정 날짜의 수입/지출 (고정지출 포함)
+function getFixedOnDate(ds) {
+  // ds = 'YYYY-MM-DD'
+  const [y, m, d] = ds.split('-').map(Number);
+  return (appData.fixedExpenses || [])
+    .filter(f => f.day === d)
+    .map(f => ({
+      id: 'fe_' + f.id,
+      date: ds,
+      type: 'expense',
+      desc: f.name,
+      amount: f.amount,
+      cat: 'fe_' + f.cat,
+      isFixed: true,
+    }));
+}
+function getTx(ds) {
+  const manual = (appData.transactions||[]).filter(t=>t.date===ds);
+  const fixed  = getFixedOnDate(ds);
+  return [...manual, ...fixed];
+}
+function getTxMonth(y,m) {
+  const p=`${y}-${String(m+1).padStart(2,'0')}`;
+  const manual=(appData.transactions||[]).filter(t=>t.date.startsWith(p));
+  // 해당 월의 모든 날짜에 고정지출 생성
+  const dim=new Date(y,m+1,0).getDate();
+  const fixed=[];
+  for(let d=1;d<=dim;d++){
+    const ds=calKey(y,m,d);
+    fixed.push(...getFixedOnDate(ds));
+  }
+  return [...manual,...fixed];
+}
 
 function updateClock() {
   const now=new Date();
@@ -1267,7 +1298,10 @@ function renderCal() {
       if (isToday) cls+=' today';
       if (isSel) cls+=' selected';
       if (d===0) cls+=' sun'; if (d===6) cls+=' sat';
-      const chips=txs.slice(0,2).map(t=>`<div class="cal-chip ${t.type}">${t.type==='income'?'+':'-'}${Math.round(t.amount/10000)}만</div>`).join('');
+      const chips=txs.slice(0,2).map(t=>{
+        const label=t.isFixed?'🔒':( t.type==='income'?'+':'-');
+        return `<div class="cal-chip ${t.type}">${label}${Math.round(t.amount/10000)}만</div>`;
+      }).join('');
       const netB=net!==0?`<div class="cal-net ${net>0?'pos':'neg'}">${net>0?'+':''}${Math.round(net/10000)}만</div>`:'';
       html+=`<td class="${cls}" onclick="selectCalDay('${ds}')"><div class="cal-dnum-wrap"><div class="cal-dnum">${day}</div></div><div class="cal-dots">${chips}</div>${netB}</td>`;
     }
@@ -1297,11 +1331,12 @@ function selectCalDay(ds) {
   const list=document.getElementById('day-tx-list');
   if (!txs.length){list.innerHTML='<div class="day-empty">내역이 없습니다<br>수입/지출 탭에서 추가하세요</div>';return;}
   list.innerHTML=txs.map(t=>{
-    const cat=allCats.find(c=>c.id===t.cat)||{icon:'💳',label:'기타'};
-    const bg=t.type==='income'?'var(--green-light)':'var(--red-light)';
+    const cat=allCats.find(c=>c.id===t.cat)||{icon:'📌',label:'기타'};
+    const bg=t.isFixed?'var(--red-light)':( t.type==='income'?'var(--green-light)':'var(--red-light)');
+    const badge=t.isFixed?'<span style="font-size:.6rem;background:var(--purple-light);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:4px;">고정</span>':'';
     return `<div class="day-tx-item">
       <div class="day-tx-icon" style="background:${bg}">${cat.icon}</div>
-      <div class="day-tx-info"><div class="day-tx-name">${t.desc}</div><div class="day-tx-cat">${cat.label}</div></div>
+      <div class="day-tx-info"><div class="day-tx-name">${t.desc}${badge}</div><div class="day-tx-cat">${t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.label||'고정지출'):cat.label}</div></div>
       <div class="day-tx-amt ${t.type}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
     </div>`;
   }).join('');
@@ -1430,7 +1465,6 @@ function renderTxManage() {
   const list=document.getElementById('tx-manage-list');
   const allCats=[...CAT_INCOME,...CAT_EXPENSE];
   if (!txs.length){list.innerHTML='<div style="text-align:center;color:var(--muted);padding:32px;font-size:.82rem;">이 달의 내역이 없습니다<br><br><button onclick="openTxModal(null)" style="background:var(--purple);color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:.82rem;">+ 내역 추가</button></div>';return;}
-  // group by date
   const byDate={};
   txs.forEach(t=>{if(!byDate[t.date])byDate[t.date]=[];byDate[t.date].push(t);});
   list.innerHTML=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([ds,items])=>{
@@ -1444,8 +1478,19 @@ function renderTxManage() {
         <span>${dayInc>0?'수입 '+fmt(dayInc):''} ${dayExp>0?'지출 '+fmt(dayExp):''}</span>
       </div>
       ${items.map(t=>{
-        const cat=allCats.find(c=>c.id===t.cat)||{icon:'💳',label:'기타'};
-        const bg=t.type==='income'?'var(--green-light)':'var(--red-light)';
+        const cat=allCats.find(c=>c.id===t.cat)||{icon:'📌',label:'기타'};
+        const bg=t.isFixed?'var(--red-light)':(t.type==='income'?'var(--green-light)':'var(--red-light)');
+        const catLabel=t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.label||'고정지출'):cat.label;
+        const icon=t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.icon||'📌'):cat.icon;
+        const badge=t.isFixed?'<span style="font-size:.6rem;background:var(--purple-light);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:4px;">고정</span>':'';
+        if(t.isFixed){
+          return `<div class="tx-item">
+            <div class="tx-cat-icon" style="background:${bg}">${icon}</div>
+            <div class="tx-info"><div class="tx-name">${t.desc}${badge}</div><div class="tx-cat-lbl">${catLabel}</div></div>
+            <div class="tx-amount expense">-${fmt(t.amount)}</div>
+            <button class="tx-remove" onclick="switchPage('spending')" title="고정지출 탭에서 수정" style="color:var(--muted);">⚙</button>
+          </div>`;
+        }
         return `<div class="tx-item">
           <div class="tx-cat-icon" style="background:${bg}">${cat.icon}</div>
           <div class="tx-info"><div class="tx-name">${t.desc}</div><div class="tx-cat-lbl">${cat.label}</div></div>
