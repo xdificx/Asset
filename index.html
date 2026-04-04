@@ -5,22 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Finance Dashboard</title>
 
-<!-- 1) Preconnect: 브라우저가 미리 연결 수립 → 폰트/CDN 대기시간 단축 -->
+<!-- 1) Preconnect: 브라우저가 미리 연결 수립 → 폰트 대기시간 단축 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
 
 <!-- 2) Google Fonts: display=swap → 폰트 로딩 중에도 텍스트 즉시 표시 -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-<!-- 3) Gridstack CSS: 렌더링에 필요한 핵심 규칙만 인라인으로 삽입 -->
-<style>
-/* Gridstack core inline (CDN 요청 제거) */
-.grid-stack{position:relative}.grid-stack-item{position:absolute;padding:0}.grid-stack-item>.grid-stack-item-content{position:absolute;inset:0;overflow:hidden}.grid-stack-placeholder>.placeholder-content{position:absolute;inset:0;border:2px dashed #AFA9EC;opacity:.3;border-radius:12px;background:rgba(83,74,183,.06)}.grid-stack>.grid-stack-item>.ui-resizable-handle{position:absolute;font-size:.1px;display:block;touch-action:none}.grid-stack>.grid-stack-item>.ui-resizable-se{right:4px;bottom:4px;cursor:se-resize;width:14px;height:14px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23AFA9EC' d='M10 2L2 10M14 6L6 14M14 10L10 14'/%3E%3C/svg%3E") no-repeat center}.grid-stack>.grid-stack-item>.ui-resizable-sw{left:4px;bottom:4px;cursor:sw-resize;width:14px;height:14px}.grid-stack-animate,.grid-stack-animate .grid-stack-item{transition:left .3s,top .3s,width .3s,height .3s}.grid-stack-animate .grid-stack-item.grid-stack-placeholder,.grid-stack-animate .grid-stack-item.ui-draggable-dragging,.grid-stack-animate .grid-stack-item.ui-resizable-resizing{transition:none}
-</style>
-
-<!-- 4) Gridstack JS: defer로 비동기 로드 → HTML 파싱 블로킹 없음 -->
-<script defer src="https://cdn.jsdelivr.net/npm/gridstack@10.3.1/dist/gridstack.all.js"></script>
 <style>
 :root {
   --bg:#f4f3f8; --surface:#fff; --surface2:#f8f7fc; --border:#ebe9f4;
@@ -295,42 +285,44 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .fe-total-amt{font-family:'DM Mono',monospace;font-size:1rem;font-weight:600;color:var(--red);}
 .fe-empty{text-align:center;color:var(--muted);padding:24px;font-size:.8rem;}
 
-/* ── Gridstack 커스터마이징 ── */
-.grid-stack { background: transparent; }
-.grid-stack-item-content { border-radius: 12px; overflow: visible; }
-.grid-stack > .grid-stack-item > .grid-stack-item-content { inset: 6px; }
-/* 편집모드 아닐 때 리사이즈 핸들 숨기기 */
-.grid-stack:not(.edit-mode) .ui-resizable-handle { display: none !important; }
-.grid-stack:not(.edit-mode) .gs-drag-handle { cursor: default !important; }
-/* 편집모드 드래그 핸들 */
-.gs-drag-handle {
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 36px; cursor: grab; z-index: 10;
-  display: flex; align-items: center; padding: 0 14px;
-  border-radius: 12px 12px 0 0;
-}
-.gs-drag-handle:active { cursor: grabbing; }
-.gs-drag-handle-icon {
-  font-size: .72rem; color: var(--muted); letter-spacing: 2px;
-  opacity: 0; transition: opacity .2s;
-  user-select: none; pointer-events: none;
-}
-.edit-mode .gs-drag-handle-icon { opacity: 1; }
-.edit-mode .grid-stack-item-content {
-  box-shadow: 0 0 0 2px var(--purple-mid);
-}
-/* 편집 버튼 */
-.edit-mode-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: 8px; cursor: pointer;
-  font-family: 'Noto Sans KR', sans-serif; font-size: .78rem;
-  font-weight: 500; transition: all .2s; border: 1px solid var(--border);
-  background: var(--surface2); color: var(--muted);
-}
-.edit-mode-btn:hover { border-color: var(--purple-mid); color: var(--purple); }
-.edit-mode-btn.active {
-  background: var(--purple); border-color: var(--purple); color: #fff;
-}
+/* ── 경량 드래그/리사이즈 대시보드 ── */
+.dash-grid{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:60px;gap:8px;position:relative;padding:4px;}
+.dash-card{border-radius:12px;overflow:visible;position:relative;transition:box-shadow .2s;}
+.dash-card.dragging{opacity:.85;box-shadow:0 12px 40px rgba(83,74,183,.22);z-index:100;transition:none;}
+.dash-card.resizing{box-shadow:0 8px 30px rgba(83,74,183,.18);z-index:100;transition:none;}
+/* 편집모드 강조 */
+.edit-active .dash-card{box-shadow:0 0 0 2px var(--purple-mid);}
+.edit-active .dash-card:hover{box-shadow:0 0 0 2px var(--purple);cursor:grab;}
+/* 드래그 핸들 */
+.dash-drag-handle{position:absolute;top:0;left:0;right:40px;height:38px;z-index:10;border-radius:12px 0 0 0;display:flex;align-items:center;padding:0 14px;cursor:default;}
+.edit-active .dash-drag-handle{cursor:grab;}
+.edit-active .dash-drag-handle:active{cursor:grabbing;}
+.dash-drag-icon{font-size:.7rem;color:var(--muted);letter-spacing:2px;opacity:0;transition:opacity .2s;user-select:none;pointer-events:none;}
+.edit-active .dash-drag-icon{opacity:1;}
+/* 리사이즈 핸들 (우하단) */
+.dash-resize-handle{position:absolute;bottom:0;right:0;width:18px;height:18px;cursor:nwse-resize;z-index:20;display:none;align-items:center;justify-content:center;}
+.dash-resize-handle::after{content:'';display:block;width:10px;height:10px;border-right:2px solid var(--purple-mid);border-bottom:2px solid var(--purple-mid);border-radius:0 0 4px 0;}
+.edit-active .dash-resize-handle{display:flex;}
+/* 그리드 컬럼/로우 스팬 */
+.dash-card[data-col="4"]{grid-column:span 4;}
+.dash-card[data-col="5"]{grid-column:span 5;}
+.dash-card[data-col="6"]{grid-column:span 6;}
+.dash-card[data-col="7"]{grid-column:span 7;}
+.dash-card[data-col="8"]{grid-column:span 8;}
+.dash-card[data-col="9"]{grid-column:span 9;}
+.dash-card[data-col="10"]{grid-column:span 10;}
+.dash-card[data-col="11"]{grid-column:span 11;}
+.dash-card[data-col="12"]{grid-column:span 12;}
+.dash-card[data-col="3"]{grid-column:span 3;}
+.dash-card[data-col="2"]{grid-column:span 2;}
+.dash-card[data-row="2"]{grid-row:span 2;}
+.dash-card[data-row="3"]{grid-row:span 3;}
+.dash-card[data-row="4"]{grid-row:span 4;}
+.dash-card[data-row="5"]{grid-row:span 5;}
+.dash-card[data-row="6"]{grid-row:span 6;}
+.dash-card[data-row="7"]{grid-row:span 7;}
+.dash-card[data-row="8"]{grid-row:span 8;}
+.dash-card[data-row="9"]{grid-row:span 9;}
 
 /* ── Toast ── */
 .toast{position:fixed;bottom:28px;right:28px;background:var(--purple-dark);color:#fff;padding:12px 18px;border-radius:10px;font-size:.8rem;z-index:300;transform:translateY(60px);opacity:0;transition:all .3s;box-shadow:0 4px 20px rgba(38,33,92,.25);}
@@ -420,108 +412,104 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
   <!-- ══ PAGE: MAIN DASHBOARD ══ -->
   <div class="page active" id="page-dashboard">
 
-    <div class="grid-stack" id="dashGrid">
+    <div class="dash-grid" id="dashGrid">
 
       <!-- 총 자산 -->
-      <div class="grid-stack-item" gs-id="total" gs-x="0" gs-y="0" gs-w="8" gs-h="4" gs-min-w="4" gs-min-h="3">
-        <div class="grid-stack-item-content">
-          <div class="gs-drag-handle"><span class="gs-drag-handle-icon">⠿⠿⠿ 총 자산</span></div>
-          <div class="total-banner" style="margin:0;border-radius:12px;height:100%;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:24px 28px;">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;">
-              <div>
-                <div class="total-label">총 자산</div>
-                <div class="total-amount" id="totalAmount"><span class="cur">₩</span>--,---,---</div>
-              </div>
-              <div class="toggle-wrap" onclick="toggleBalance()" title="잔액 숨김 On/Off">
-                <span class="toggle-lbl" id="toggle-lbl">잔액 숨김</span>
-                <div class="toggle-track" id="toggle-track"><div class="toggle-thumb"></div></div>
-              </div>
+      <div class="dash-card" id="dc-total" data-id="total" data-col="8" data-row="4">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 총 자산</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="total-banner" style="margin:0;border-radius:12px;height:100%;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:24px 28px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;">
+            <div>
+              <div class="total-label">총 자산</div>
+              <div class="total-amount" id="totalAmount"><span class="cur">₩</span>--,---,---</div>
             </div>
-            <div id="balance-details" style="display:flex;flex-direction:column;gap:14px;width:100%;margin-top:20px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(175,169,236,0.2);">
-                <span class="st-label">이번 달 이자/수익</span><span class="st-val up" id="monthlyReturn">+₩0</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(175,169,236,0.2);">
-                <span class="st-label">주식 평가손익</span><span class="st-val" id="stockPnL">₩0</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span class="st-label">전체 수익률</span><span class="st-val neu" id="totalReturn">0.00%</span>
-              </div>
+            <div class="toggle-wrap" onclick="toggleBalance()" title="잔액 숨김 On/Off">
+              <span class="toggle-lbl" id="toggle-lbl">잔액 숨김</span>
+              <div class="toggle-track" id="toggle-track"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+          <div id="balance-details" style="display:flex;flex-direction:column;gap:14px;width:100%;margin-top:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(175,169,236,0.2);">
+              <span class="st-label">이번 달 이자/수익</span><span class="st-val up" id="monthlyReturn">+₩0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(175,169,236,0.2);">
+              <span class="st-label">주식 평가손익</span><span class="st-val" id="stockPnL">₩0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="st-label">전체 수익률</span><span class="st-val neu" id="totalReturn">0.00%</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 자산 배분 -->
-      <div class="grid-stack-item" gs-id="alloc" gs-x="8" gs-y="0" gs-w="4" gs-h="4" gs-min-w="3" gs-min-h="3">
-        <div class="grid-stack-item-content">
-          <div class="gs-drag-handle"><span class="gs-drag-handle-icon">⠿⠿⠿ 자산 배분</span></div>
-          <div class="card" style="height:100%;border-radius:12px;display:flex;flex-direction:column;justify-content:center;">
-            <div class="card-header" style="margin-bottom:14px;">
-              <div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 자산 배분</div>
+      <div class="dash-card" id="dc-alloc" data-id="alloc" data-col="4" data-row="4">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 자산 배분</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;display:flex;flex-direction:column;justify-content:center;">
+          <div class="card-header" style="margin-bottom:14px;">
+            <div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 자산 배분</div>
+          </div>
+          <div class="chart-wrap">
+            <div class="donut-container" style="width:130px;height:130px;">
+              <svg width="130" height="130" viewBox="0 0 130 130">
+                <circle cx="65" cy="65" r="48" fill="none" stroke="var(--border)" stroke-width="16"/>
+                <circle id="donut-deposit" cx="65" cy="65" r="48" fill="none" stroke="var(--purple)" stroke-width="16" stroke-dasharray="0 302" stroke-dashoffset="75" style="transition:all .8s ease" transform="rotate(-90 65 65)"/>
+                <circle id="donut-savings" cx="65" cy="65" r="48" fill="none" stroke="var(--green-mid)" stroke-width="16" stroke-dasharray="0 302" stroke-dashoffset="75" style="transition:all .8s ease" transform="rotate(-90 65 65)"/>
+                <circle id="donut-stock" cx="65" cy="65" r="48" fill="none" stroke="var(--gray)" stroke-width="16" stroke-dasharray="0 302" stroke-dashoffset="75" style="transition:all .8s ease" transform="rotate(-90 65 65)"/>
+              </svg>
             </div>
-            <div class="chart-wrap">
-              <div class="donut-container" style="width:130px;height:130px;">
-                <svg width="130" height="130" viewBox="0 0 130 130">
-                  <circle cx="65" cy="65" r="48" fill="none" stroke="var(--border)" stroke-width="16"/>
-                  <circle id="donut-deposit" cx="65" cy="65" r="48" fill="none" stroke="var(--purple)" stroke-width="16" stroke-dasharray="0 302" stroke-dashoffset="75" style="transition:all .8s ease" transform="rotate(-90 65 65)"/>
-                  <circle id="donut-savings" cx="65" cy="65" r="48" fill="none" stroke="var(--green-mid)" stroke-width="16" stroke-dasharray="0 302" stroke-dashoffset="75" style="transition:all .8s ease" transform="rotate(-90 65 65)"/>
-                  <circle id="donut-stock" cx="65" cy="65" r="48" fill="none" stroke="var(--gray)" stroke-width="16" stroke-dasharray="0 302" stroke-dashoffset="75" style="transition:all .8s ease" transform="rotate(-90 65 65)"/>
-                </svg>
-              </div>
-              <div class="legend" style="flex:1;">
-                <div class="leg-item"><div class="leg-left"><div class="leg-dot" style="background:var(--purple)"></div><span class="leg-name">예금</span></div><div class="leg-right"><div class="leg-pct" id="leg-dep-pct" style="color:var(--purple)">0%</div><div class="leg-amt" id="leg-dep-amt">₩0</div></div></div>
-                <div class="leg-item"><div class="leg-left"><div class="leg-dot" style="background:var(--green-mid)"></div><span class="leg-name">적금</span></div><div class="leg-right"><div class="leg-pct" id="leg-sav-pct" style="color:var(--green)">0%</div><div class="leg-amt" id="leg-sav-amt">₩0</div></div></div>
-                <div class="leg-item"><div class="leg-left"><div class="leg-dot" style="background:var(--gray)"></div><span class="leg-name">주식</span></div><div class="leg-right"><div class="leg-pct" id="leg-stk-pct" style="color:var(--gray-dark)">0%</div><div class="leg-amt" id="leg-stk-amt">₩0</div></div></div>
-              </div>
+            <div class="legend" style="flex:1;">
+              <div class="leg-item"><div class="leg-left"><div class="leg-dot" style="background:var(--purple)"></div><span class="leg-name">예금</span></div><div class="leg-right"><div class="leg-pct" id="leg-dep-pct" style="color:var(--purple)">0%</div><div class="leg-amt" id="leg-dep-amt">₩0</div></div></div>
+              <div class="leg-item"><div class="leg-left"><div class="leg-dot" style="background:var(--green-mid)"></div><span class="leg-name">적금</span></div><div class="leg-right"><div class="leg-pct" id="leg-sav-pct" style="color:var(--green)">0%</div><div class="leg-amt" id="leg-sav-amt">₩0</div></div></div>
+              <div class="leg-item"><div class="leg-left"><div class="leg-dot" style="background:var(--gray)"></div><span class="leg-name">주식</span></div><div class="leg-right"><div class="leg-pct" id="leg-stk-pct" style="color:var(--gray-dark)">0%</div><div class="leg-amt" id="leg-stk-amt">₩0</div></div></div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 캘린더 -->
-      <div class="grid-stack-item" gs-id="calendar" gs-x="0" gs-y="4" gs-w="8" gs-h="7" gs-min-w="5" gs-min-h="5">
-        <div class="grid-stack-item-content">
-          <div class="gs-drag-handle"><span class="gs-drag-handle-icon">⠿⠿⠿ 캘린더</span></div>
-          <div class="mini-cal-wrap" style="height:100%;">
-            <div class="cal-hdr">
-              <div class="cal-nav">
-                <button class="cal-nav-btn" onclick="calPrev()">‹</button>
-                <span class="cal-month-title" id="cal-title"></span>
-                <button class="cal-nav-btn" onclick="calNext()">›</button>
-              </div>
-              <button class="cal-today-btn" onclick="calToday()">오늘</button>
+      <div class="dash-card" id="dc-calendar" data-id="calendar" data-col="8" data-row="7">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 캘린더</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="mini-cal-wrap" style="height:100%;overflow:auto;">
+          <div class="cal-hdr">
+            <div class="cal-nav">
+              <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+              <span class="cal-month-title" id="cal-title"></span>
+              <button class="cal-nav-btn" onclick="calNext()">›</button>
             </div>
-            <table class="cal-grid" style="width:100%;">
-              <thead><tr><th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th></tr></thead>
-              <tbody id="cal-body"></tbody>
-            </table>
+            <button class="cal-today-btn" onclick="calToday()">오늘</button>
           </div>
+          <table class="cal-grid" style="width:100%;">
+            <thead><tr><th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th></tr></thead>
+            <tbody id="cal-body"></tbody>
+          </table>
         </div>
       </div>
 
       <!-- 날짜 패널 -->
-      <div class="grid-stack-item" gs-id="daypanel" gs-x="8" gs-y="4" gs-w="4" gs-h="7" gs-min-w="3" gs-min-h="4">
-        <div class="grid-stack-item-content">
-          <div class="gs-drag-handle"><span class="gs-drag-handle-icon">⠿⠿⠿ 일별 내역</span></div>
-          <div class="day-panel" id="day-panel" style="height:100%;border-radius:12px;">
-            <div class="day-panel-hdr">
-              <div class="day-panel-title" id="day-title">날짜를 선택하세요</div>
-              <div class="day-panel-sub" id="day-sub">캘린더에서 날짜를 클릭하세요</div>
-            </div>
-            <div class="day-sum-row" id="day-sum-row" style="display:none">
-              <div class="day-sum-box"><div class="day-sum-lbl">수입</div><div class="day-sum-val inc" id="day-inc">₩0</div></div>
-              <div class="day-sum-box"><div class="day-sum-lbl">지출</div><div class="day-sum-val exp" id="day-exp">₩0</div></div>
-              <div class="day-sum-box"><div class="day-sum-lbl">잔액</div><div class="day-sum-val neu" id="day-bal">₩0</div></div>
-            </div>
-            <div class="day-tx-list" id="day-tx-list">
-              <div class="day-empty">날짜를 선택하면<br>수입/지출 내역이 표시됩니다</div>
-            </div>
+      <div class="dash-card" id="dc-daypanel" data-id="daypanel" data-col="4" data-row="7">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 일별 내역</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="day-panel" id="day-panel" style="height:100%;border-radius:12px;">
+          <div class="day-panel-hdr">
+            <div class="day-panel-title" id="day-title">날짜를 선택하세요</div>
+            <div class="day-panel-sub" id="day-sub">캘린더에서 날짜를 클릭하세요</div>
+          </div>
+          <div class="day-sum-row" id="day-sum-row" style="display:none">
+            <div class="day-sum-box"><div class="day-sum-lbl">수입</div><div class="day-sum-val inc" id="day-inc">₩0</div></div>
+            <div class="day-sum-box"><div class="day-sum-lbl">지출</div><div class="day-sum-val exp" id="day-exp">₩0</div></div>
+            <div class="day-sum-box"><div class="day-sum-lbl">잔액</div><div class="day-sum-val neu" id="day-bal">₩0</div></div>
+          </div>
+          <div class="day-tx-list" id="day-tx-list">
+            <div class="day-empty">날짜를 선택하면<br>수입/지출 내역이 표시됩니다</div>
           </div>
         </div>
       </div>
 
-    </div><!-- /grid-stack -->
+    </div><!-- /dash-grid -->
   </div><!-- /dashboard -->
 
 
@@ -1785,59 +1773,180 @@ function renderFixedExpenses() {
 
 }
 
-// ── Gridstack 대시보드 레이아웃 ──
-const GS_LAYOUT_KEY = 'dashGridLayout_v1';
-let dashGrid = null;
+// ── 경량 드래그/리사이즈 대시보드 (외부 라이브러리 없음) ──
+const DASH_LAYOUT_KEY = 'dashLayout_v2';
 let isEditMode = false;
 
-function initGridstack() {
-  dashGrid = GridStack.init({
-    column: 12,
-    cellHeight: 60,
-    margin: 8,
-    animate: true,
-    draggable: { handle: '.gs-drag-handle' },
-    resizable: { handles: 'se, sw' },
-    disableDrag: true,
-    disableResize: true,
-  }, '#dashGrid');
-
-  // 저장된 레이아웃 불러오기
-  const saved = localStorage.getItem(GS_LAYOUT_KEY);
-  if (saved) {
-    try {
-      const layout = JSON.parse(saved);
-      dashGrid.load(layout, false);
-    } catch(e) {}
-  }
-
-  // 변경 시 자동 저장
-  dashGrid.on('change', () => {
-    const layout = dashGrid.save(false);
-    localStorage.setItem(GS_LAYOUT_KEY, JSON.stringify(layout));
+// 레이아웃 저장/불러오기
+function saveDashLayout() {
+  const cards = document.querySelectorAll('.dash-card');
+  const layout = {};
+  cards.forEach(c => {
+    layout[c.dataset.id] = { col: c.dataset.col, row: c.dataset.row };
   });
+  localStorage.setItem(DASH_LAYOUT_KEY, JSON.stringify(layout));
+}
+function loadDashLayout() {
+  try {
+    const saved = localStorage.getItem(DASH_LAYOUT_KEY);
+    if (!saved) return;
+    const layout = JSON.parse(saved);
+    Object.entries(layout).forEach(([id, val]) => {
+      const card = document.querySelector(`.dash-card[data-id="${id}"]`);
+      if (card) {
+        card.dataset.col = val.col;
+        card.dataset.row = val.row;
+      }
+    });
+  } catch(e) {}
 }
 
+// 편집 모드 토글
 function toggleEditMode() {
   isEditMode = !isEditMode;
   const btn = document.getElementById('editModeBtn');
   const grid = document.getElementById('dashGrid');
   if (isEditMode) {
-    dashGrid.enableMove(true);
-    dashGrid.enableResize(true);
-    grid.classList.add('edit-mode');
+    grid.classList.add('edit-active');
     btn.classList.add('active');
     btn.textContent = '✓ 편집 완료';
-    showToast('✦ 카드를 드래그하거나 모서리를 당겨 크기를 조절하세요');
+    initDragResize();
+    showToast('✦ 카드 헤더를 드래그하거나 ↘ 모서리로 크기를 조절하세요');
   } else {
-    dashGrid.enableMove(false);
-    dashGrid.enableResize(false);
-    grid.classList.remove('edit-mode');
+    grid.classList.remove('edit-active');
     btn.classList.remove('active');
     btn.textContent = '✦ 레이아웃 편집';
+    destroyDragResize();
+    saveDashLayout();
     showToast('✅ 레이아웃이 저장됐습니다');
   }
 }
+
+// 드래그/리사이즈 초기화
+let dragCleanups = [];
+function initDragResize() {
+  destroyDragResize();
+  document.querySelectorAll('.dash-card').forEach(card => {
+    const handle = card.querySelector('.dash-drag-handle');
+    const resizeHandle = card.querySelector('.dash-resize-handle');
+    const dc1 = makeDraggable(card, handle);
+    const dc2 = makeResizable(card, resizeHandle);
+    dragCleanups.push(dc1, dc2);
+  });
+}
+function destroyDragResize() {
+  dragCleanups.forEach(fn => fn && fn());
+  dragCleanups = [];
+}
+
+// 드래그 구현 (CSS grid-column/row order 방식)
+function makeDraggable(card, handle) {
+  const grid = document.getElementById('dashGrid');
+  let startX, startY, startOrder;
+  const COLS = 12, ROW_H = 68; // gap 포함 행 높이
+
+  function getGridRect() { return grid.getBoundingClientRect(); }
+  function getColWidth() { return getGridRect().width / COLS; }
+
+  function onDown(e) {
+    if (!isEditMode) return;
+    e.preventDefault();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    startX = cx; startY = cy;
+    card.classList.add('dragging');
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchend', onUp);
+  }
+  function onMove(e) {
+    e.preventDefault();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    const dx = cx - startX, dy = cy - startY;
+    const colW = getColWidth();
+    const colDelta = Math.round(dx / colW);
+    const rowDelta = Math.round(dy / ROW_H);
+    // 카드 순서 변경: 이웃 카드와 swap
+    if (Math.abs(colDelta) >= 1 || Math.abs(rowDelta) >= 1) {
+      const cards = [...document.querySelectorAll('.dash-card')];
+      const idx = cards.indexOf(card);
+      let swapIdx = idx;
+      if (colDelta > 0 && idx < cards.length - 1) swapIdx = idx + 1;
+      if (colDelta < 0 && idx > 0) swapIdx = idx - 1;
+      if (rowDelta > 0 && idx < cards.length - 1) swapIdx = idx + 1;
+      if (rowDelta < 0 && idx > 0) swapIdx = idx - 1;
+      if (swapIdx !== idx) {
+        const ref = swapIdx > idx ? cards[swapIdx].nextSibling : cards[swapIdx];
+        grid.insertBefore(card, ref);
+        startX = cx; startY = cy;
+      }
+    }
+  }
+  function onUp() {
+    card.classList.remove('dragging');
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchend', onUp);
+  }
+  handle.addEventListener('mousedown', onDown);
+  handle.addEventListener('touchstart', onDown, {passive:false});
+  return () => {
+    handle.removeEventListener('mousedown', onDown);
+    handle.removeEventListener('touchstart', onDown);
+  };
+}
+
+// 리사이즈 구현 (col/row span 조절)
+function makeResizable(card, handle) {
+  const grid = document.getElementById('dashGrid');
+  const COLS = 12, MIN_COL = 2, MIN_ROW = 2, ROW_H = 68;
+
+  function onDown(e) {
+    if (!isEditMode) return;
+    e.preventDefault(); e.stopPropagation();
+    const startX = e.touches ? e.touches[0].clientX : e.clientX;
+    const startY = e.touches ? e.touches[0].clientY : e.clientY;
+    const startCol = parseInt(card.dataset.col) || 4;
+    const startRow = parseInt(card.dataset.row) || 4;
+    const colW = grid.getBoundingClientRect().width / COLS;
+
+    card.classList.add('resizing');
+    function onMove(e) {
+      e.preventDefault();
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      const newCol = Math.max(MIN_COL, Math.min(COLS, startCol + Math.round((cx - startX) / colW)));
+      const newRow = Math.max(MIN_ROW, startRow + Math.round((cy - startY) / ROW_H));
+      card.dataset.col = newCol;
+      card.dataset.row = newRow;
+    }
+    function onUp() {
+      card.classList.remove('resizing');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchend', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchend', onUp);
+  }
+  handle.addEventListener('mousedown', onDown);
+  handle.addEventListener('touchstart', onDown, {passive:false});
+  return () => {
+    handle.removeEventListener('mousedown', onDown);
+    handle.removeEventListener('touchstart', onDown);
+  };
+}
+
+// 초기 레이아웃 적용
+loadDashLayout();
+
+
 
 function renderAll() {
   renderDeposits(); renderSavings(); renderStocks(); renderTotals();
@@ -1852,20 +1961,6 @@ setInterval(async()=>{ if(appData.stocks.length>0) await fetchAllStocks(); }, 30
 renderAll();
 loadFromSheets();
 
-// Gridstack은 defer로 로드되므로 DOMContentLoaded 이후 초기화
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof GridStack !== 'undefined') {
-    initGridstack();
-  } else {
-    // defer 스크립트가 아직 실행 전일 경우 대기
-    const checkGS = setInterval(() => {
-      if (typeof GridStack !== 'undefined') {
-        clearInterval(checkGS);
-        initGridstack();
-      }
-    }, 50);
-  }
-});
 </script>
 </body>
 </html>
