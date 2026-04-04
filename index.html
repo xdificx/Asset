@@ -880,6 +880,8 @@ const STORAGE_KEY = 'assetDashboard_v2';
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwmFyLtnAy_8uRNWQ8YDEW2DQ16GcirXgnD2tTVQl32jISPNdHufPwENFLd9aAx1U7e/exec';
 
 function loadData() {
+  // localStorage는 오프라인 캐시 용도로만 사용
+  // Sheets가 응답하면 덮어씌워짐
   try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
   return { deposits:[], savings:[], stocks:[], transactions:[], fixedExpenses:[], cardUsage:{} };
 }
@@ -892,19 +894,35 @@ async function saveData(data) {
 }
 async function loadFromSheets() {
   if (!SHEETS_URL || SHEETS_URL.includes('여기에')) return;
+  showToast('☁️ 데이터 불러오는 중...');
   try {
-    showToast('☁️ 클라우드 데이터 불러오는 중...');
-    const res = await fetch(SHEETS_URL);
-    const data = await res.json();
-    if (data && (data.deposits || data.savings || data.stocks)) {
+    const res = await fetch(SHEETS_URL, { method:'GET', redirect:'follow' });
+    if (!res.ok) { showToast(`❌ 서버 오류: ${res.status}`); return; }
+    const text = await res.text();
+    if (!text || text.trim() === '') { showToast('⚠️ Sheets 응답이 비어있습니다'); return; }
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) { showToast('❌ JSON 파싱 실패'); console.error('Sheets 응답:', text.slice(0,300)); return; }
+    // 이전과 동일한 조건: object 형태면 무조건 수용 (빈 배열도 허용)
+    if (data && typeof data === 'object') {
       appData = data;
-      if (!appData.transactions) appData.transactions = [];
-      if (!appData.fixedExpenses) appData.fixedExpenses = [];
-      if (!appData.cardUsage) appData.cardUsage = {};
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      renderAll(); showToast('✅ 클라우드 데이터 불러오기 완료!');
+      if (!Array.isArray(appData.deposits))     appData.deposits = [];
+      if (!Array.isArray(appData.savings))       appData.savings = [];
+      if (!Array.isArray(appData.stocks))        appData.stocks = [];
+      if (!Array.isArray(appData.transactions))  appData.transactions = [];
+      if (!Array.isArray(appData.fixedExpenses)) appData.fixedExpenses = [];
+      if (!appData.cardUsage || typeof appData.cardUsage !== 'object') appData.cardUsage = {};
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      renderAll();
+      showToast('✅ 데이터 불러오기 완료');
+    } else {
+      showToast('⚠️ 데이터 형식 오류');
+      console.error('Sheets 데이터:', data);
     }
-  } catch(e) { showToast('⚠️ 로컬 데이터를 사용합니다'); }
+  } catch(e) {
+    showToast('❌ 연결 실패: ' + e.message);
+    console.error('loadFromSheets 오류:', e);
+  }
 }
 let appData = loadData();
 if (!appData.transactions) appData.transactions = [];
@@ -1009,8 +1027,7 @@ async function fetchAllStocks() {
       updated++;
     }
   }
-  // 실시간 가격은 로컬에만 캐시 (Sheets 저장 제외 — 가격은 항상 실시간 조회)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  // 주가만 메모리에 유지 — localStorage 저장 안 함 (Sheets 데이터 보호)
   renderStocks();
   renderStkStats();
   renderTotals();
@@ -1933,17 +1950,9 @@ function makeResizable(card, handle) {
   };
 }
 
-// 초기 레이아웃 적용
-loadDashLayout();
-
-
-
-// ── 초기 실행 ──
-// 1) 현재 보이는 페이지(dashboard)만 즉시 렌더링 → 나머지는 탭 전환 시 렌더링
+// ── 초기 실행 순서 (이전 파일과 동일하게 복원) ──
 function renderAll() {
-  // 공통 (항상 필요)
   renderTotals();
-  // 현재 활성 페이지만 렌더링
   const active = document.querySelector('.page.active');
   if (!active) return;
   const pid = active.id;
@@ -1955,24 +1964,19 @@ function renderAll() {
   if (pid === 'page-stock')    { renderStocks(); renderStkStats(); }
 }
 
-// 2) 첫 화면(dashboard)에 필요한 것만 렌더링
-renderTotals();
-renderCal();
+// 1) localStorage 캐시로 즉시 렌더 (있으면)
+renderAll();
 
-// 3) 나머지는 첫 프레임 이후 비동기로 처리 (화면 차단 없음)
-requestAnimationFrame(() => {
-  renderDeposits(); renderSavings(); renderStocks();
-  renderDepStats(); renderSavStats(); renderStkStats();
-  renderTxManage(); renderSpending();
-  renderFixedExpenses(); renderCardDonut();
-});
+// 2) Sheets에서 실제 데이터 즉시 로드 → 완료 시 renderAll() 재실행
+loadFromSheets();
 
-// 4) Sheets 동기화는 3초 뒤 백그라운드에서 실행 → 초기 로딩 완전히 무관
-setTimeout(() => { loadFromSheets(); }, 3000);
+// 3) 대시보드 카드 레이아웃 복원 (UI 전용, 데이터와 무관)
+loadDashLayout();
 
 async function refreshAll(){showToast('🔄 데이터 새로고침 중...');await fetchAllStocks();renderAll();}
 // 30초마다 자동 시세 갱신
 setInterval(async()=>{ if(appData.stocks.length>0) await fetchAllStocks(); }, 30000);
+
 
 
 </script>
