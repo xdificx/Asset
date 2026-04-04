@@ -519,159 +519,156 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-hei
         <div class="pg-hdr-title">💸 지출현황</div>
         <div class="pg-hdr-sub" id="sp-month-sub">월간 지출 분석</div>
       </div>
-      <div class="month-nav">
-        <button class="month-nav-btn" onclick="spPrevMonth()">‹</button>
-        <span class="month-nav-title" id="sp-month-title"></span>
-        <button class="month-nav-btn" onclick="spNextMonth()">›</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="month-nav">
+          <button class="month-nav-btn" onclick="spPrevMonth()">‹</button>
+          <span class="month-nav-title" id="sp-month-title"></span>
+          <button class="month-nav-btn" onclick="spNextMonth()">›</button>
+        </div>
       </div>
     </div>
 
-
-    <!-- 수입/지출 비율 + 카드이용비율 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+    <div class="dash-grid" id="grid-spending">
       <!-- 수입/지출 비율 -->
-      <div class="card">
-        <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 수입/지출 비율</div></div>
-        <div style="display:flex;align-items:stretch;gap:16px;">
-          <!-- 도넛차트 (좌측 3.5, 박스 포함) -->
-          <div style="flex:3.5;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
-            <div class="donut-container" style="width:100px;height:100px;flex-shrink:0;">
-              <svg width="100" height="100" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="36" fill="none" stroke="var(--border)" stroke-width="14"/>
-                <circle id="ratio-arc-inc" cx="50" cy="50" r="36" fill="none" stroke="#E24B4A" stroke-width="14" stroke-dasharray="0 226" stroke-dashoffset="57" style="transition:all .8s ease" transform="rotate(-90 50 50)"/>
-                <circle id="ratio-arc-exp" cx="50" cy="50" r="36" fill="none" stroke="#378ADD" stroke-width="14" stroke-dasharray="0 226" stroke-dashoffset="57" style="transition:all .8s ease" transform="rotate(-90 50 50)"/>
+      <div class="dash-card" data-id="sp-ratio" data-col="6" data-row="5">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 수입/지출 비율</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 수입/지출 비율</div></div>
+          <div style="display:flex;align-items:stretch;gap:16px;">
+            <div style="flex:3.5;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+              <div class="donut-container" style="width:100px;height:100px;flex-shrink:0;">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="36" fill="none" stroke="var(--border)" stroke-width="14"/>
+                  <circle id="ratio-arc-inc" cx="50" cy="50" r="36" fill="none" stroke="#E24B4A" stroke-width="14" stroke-dasharray="0 226" stroke-dashoffset="57" style="transition:all .8s ease" transform="rotate(-90 50 50)"/>
+                  <circle id="ratio-arc-exp" cx="50" cy="50" r="36" fill="none" stroke="#378ADD" stroke-width="14" stroke-dasharray="0 226" stroke-dashoffset="57" style="transition:all .8s ease" transform="rotate(-90 50 50)"/>
+                </svg>
+                <div class="donut-center"><div style="font-size:.6rem;color:var(--muted);line-height:1.3;" id="ratio-center">-</div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;width:100%;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+                  <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0;"></div><span style="font-size:.68rem;color:var(--muted);">수입</span></div>
+                  <span style="font-family:var(--font-mono);font-size:.72rem;font-weight:600;color:#E24B4A;" id="ratio-inc-pct">0%</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+                  <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#378ADD;flex-shrink:0;"></div><span style="font-size:.68rem;color:var(--muted);">지출</span></div>
+                  <span style="font-family:var(--font-mono);font-size:.72rem;font-weight:600;color:#378ADD;" id="ratio-exp-pct">0%</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex:6.5;">
+              <div style="background:#FCEBEB;border-radius:8px;padding:11px 16px;">
+                <div style="font-size:.82rem;color:#E24B4A;margin-bottom:4px;font-weight:600;">이번 달 수입</div>
+                <div style="font-family:var(--font-mono);font-size:1.2rem;font-weight:700;color:#E24B4A;" id="sp-income">₩0</div>
+              </div>
+              <div style="background:#E6F1FB;border-radius:8px;padding:11px 16px;">
+                <div style="font-size:.82rem;color:#185FA5;margin-bottom:4px;font-weight:600;">이번 달 지출</div>
+                <div style="font-family:var(--font-mono);font-size:1.2rem;font-weight:700;color:#185FA5;" id="sp-expense">₩0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 카드이용비율 -->
+      <div class="dash-card" data-id="sp-card" data-col="6" data-row="5">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 카드 이용 비율</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div class="card-header">
+            <div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 카드 이용 비율</div>
+            <button class="add-btn" onclick="openCardModal()" style="padding:5px 12px;font-size:.75rem;">+ 입력</button>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <div class="donut-container" style="width:120px;height:120px;">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="44" fill="none" stroke="var(--border)" stroke-width="16"/>
+                <circle id="card-arc-credit" cx="60" cy="60" r="44" fill="none" stroke="#534AB7" stroke-width="16" stroke-dasharray="0 276" stroke-dashoffset="69" style="transition:all .8s ease" transform="rotate(-90 60 60)"/>
+                <circle id="card-arc-check" cx="60" cy="60" r="44" fill="none" stroke="#97C459" stroke-width="16" stroke-dasharray="0 276" stroke-dashoffset="69" style="transition:all .8s ease" transform="rotate(-90 60 60)"/>
               </svg>
-              <div class="donut-center"><div style="font-size:.6rem;color:var(--muted);line-height:1.3;" id="ratio-center">-</div></div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;width:100%;">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-                <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0;"></div><span style="font-size:.68rem;color:var(--muted);">수입</span></div>
-                <span style="font-family:var(--font-mono);font-size:.72rem;font-weight:600;color:#E24B4A;" id="ratio-inc-pct">0%</span>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-                <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#378ADD;flex-shrink:0;"></div><span style="font-size:.68rem;color:var(--muted);">지출</span></div>
-                <span style="font-family:var(--font-mono);font-size:.72rem;font-weight:600;color:#378ADD;" id="ratio-exp-pct">0%</span>
+              <div class="donut-center">
+                <div style="font-family:var(--font-mono);font-size:.85rem;font-weight:600;color:var(--text);" id="card-total-center">₩0</div>
+                <div style="font-size:.62rem;color:var(--muted);">총 이용</div>
               </div>
             </div>
-          </div>
-          <!-- 수입/지출 금액 (우측) -->
-          <div style="display:flex;flex-direction:column;gap:8px;flex:6.5;">
-            <div style="background:#FCEBEB;border-radius:8px;padding:11px 16px;">
-              <div style="font-size:.82rem;color:#E24B4A;margin-bottom:4px;font-weight:600;">이번 달 수입</div>
-              <div style="font-family:var(--font-mono);font-size:1.2rem;font-weight:700;color:#E24B4A;" id="sp-income">₩0</div>
-              <div style="font-size:.75rem;color:#E24B4A;margin-top:3px;opacity:.75;" id="ratio-inc-pct">0%</div>
-            </div>
-            <div style="background:#E6F1FB;border-radius:8px;padding:11px 16px;">
-              <div style="font-size:.82rem;color:#185FA5;margin-bottom:4px;font-weight:600;">이번 달 지출</div>
-              <div style="font-family:var(--font-mono);font-size:1.2rem;font-weight:700;color:#185FA5;" id="sp-expense">₩0</div>
-              <div style="font-size:.75rem;color:#185FA5;margin-top:3px;opacity:.75;" id="ratio-exp-pct">0%</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 신용/체크카드 이용 비율 -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 카드 이용 비율</div>
-          <button class="add-btn" onclick="openCardModal()" style="padding:5px 12px;font-size:.75rem;">+ 입력</button>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-          <!-- 도넛 -->
-          <div class="donut-container" style="width:120px;height:120px;">
-            <svg width="120" height="120" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="44" fill="none" stroke="var(--border)" stroke-width="16"/>
-              <circle id="card-arc-credit" cx="60" cy="60" r="44" fill="none" stroke="#534AB7" stroke-width="16" stroke-dasharray="0 276" stroke-dashoffset="69" style="transition:all .8s ease" transform="rotate(-90 60 60)"/>
-              <circle id="card-arc-check" cx="60" cy="60" r="44" fill="none" stroke="#97C459" stroke-width="16" stroke-dasharray="0 276" stroke-dashoffset="69" style="transition:all .8s ease" transform="rotate(-90 60 60)"/>
-            </svg>
-            <div class="donut-center">
-              <div style="font-family:var(--font-mono);font-size:.85rem;font-weight:600;color:var(--text);" id="card-total-center">₩0</div>
-              <div style="font-size:.62rem;color:var(--muted);">총 이용</div>
-            </div>
-          </div>
-          <!-- 레전드 -->
-          <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--purple-light);border-radius:8px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <div style="width:9px;height:9px;border-radius:50%;background:#534AB7;"></div>
-                <span style="font-size:.78rem;color:var(--purple-dark);font-weight:500;">신용카드</span>
+            <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--purple-light);border-radius:8px;">
+                <div style="display:flex;align-items:center;gap:6px;"><div style="width:9px;height:9px;border-radius:50%;background:#534AB7;"></div><span style="font-size:.78rem;color:var(--purple-dark);font-weight:500;">신용카드</span></div>
+                <div style="text-align:right;"><div style="font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--purple);" id="card-credit-amt">₩0</div><div style="font-size:.65rem;color:var(--purple-mid);" id="card-credit-pct">0%</div></div>
               </div>
-              <div style="text-align:right;">
-                <div style="font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--purple);" id="card-credit-amt">₩0</div>
-                <div style="font-size:.65rem;color:var(--purple-mid);" id="card-credit-pct">0%</div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--green-light);border-radius:8px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <div style="width:9px;height:9px;border-radius:50%;background:#97C459;"></div>
-                <span style="font-size:.78rem;color:var(--green);font-weight:500;">체크카드</span>
-              </div>
-              <div style="text-align:right;">
-                <div style="font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--green);" id="card-check-amt">₩0</div>
-                <div style="font-size:.65rem;color:var(--green-mid);" id="card-check-pct">0%</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--green-light);border-radius:8px;">
+                <div style="display:flex;align-items:center;gap:6px;"><div style="width:9px;height:9px;border-radius:50%;background:#97C459;"></div><span style="font-size:.78rem;color:var(--green);font-weight:500;">체크카드</span></div>
+                <div style="text-align:right;"><div style="font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--green);" id="card-check-amt">₩0</div><div style="font-size:.65rem;color:var(--green-mid);" id="card-check-pct">0%</div></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-    </div><!-- /2-col grid -->
-
-    <!-- 카테고리별 지출 도넛 (단독 행) -->
-    <div class="card" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 카테고리별 지출</div></div>
-      <div class="chart-wrap">
-        <div class="donut-container">
-          <svg id="sp-donut-svg" width="150" height="150" viewBox="0 0 150 150">
-            <circle cx="75" cy="75" r="56" fill="none" stroke="var(--border)" stroke-width="18"/>
-          </svg>
-          <div class="donut-center"><div class="donut-pct" id="sp-donut-center" style="font-size:1rem">-</div><div class="donut-sub">총 지출</div></div>
+      <!-- 카테고리별 지출 -->
+      <div class="dash-card" data-id="sp-cat" data-col="12" data-row="5">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 카테고리별 지출</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 카테고리별 지출</div></div>
+          <div class="chart-wrap">
+            <div class="donut-container">
+              <svg id="sp-donut-svg" width="150" height="150" viewBox="0 0 150 150">
+                <circle cx="75" cy="75" r="56" fill="none" stroke="var(--border)" stroke-width="18"/>
+              </svg>
+              <div class="donut-center"><div class="donut-pct" id="sp-donut-center" style="font-size:1rem">-</div><div class="donut-sub">총 지출</div></div>
+            </div>
+            <div class="sp-legend" id="sp-legend" style="flex:1"></div>
+          </div>
         </div>
-        <div class="sp-legend" id="sp-legend" style="flex:1"></div>
+      </div>
+
+      <!-- 고정지출 -->
+      <div class="dash-card" data-id="sp-fixed" data-col="6" data-row="6">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 고정지출비용</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div class="card-header">
+            <div class="card-title"><span class="cdot" style="background:var(--red)"></span> 고정지출비용</div>
+            <button class="add-btn" onclick="openFixedExpenseModal()" style="padding:5px 12px;font-size:.75rem;">+ 항목 추가</button>
+          </div>
+          <div id="fe-list"><div class="fe-empty">고정지출 항목을 추가해 주세요</div></div>
+          <div class="fe-total-row" id="fe-total-row" style="display:none;">
+            <span class="fe-total-lbl">월 고정지출 합계</span>
+            <span class="fe-total-amt" id="fe-total-amt">₩0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 주별 수입/지출 -->
+      <div class="dash-card" data-id="sp-weekly" data-col="6" data-row="6">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 주별 수입/지출</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 주별 수입/지출</div></div>
+          <div id="sp-weekly-chart"></div>
+        </div>
+      </div>
+
+      <!-- 주별 내역 -->
+      <div class="dash-card" data-id="sp-list" data-col="12" data-row="6">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 주별 내역</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 주별 내역</div></div>
+          <div id="sp-weekly-list"></div>
+        </div>
       </div>
     </div>
-
-    <!-- 고정지출 + 주별 수입/지출 막대그래프 -->
-    <div class="grid-2" style="margin-bottom:20px;">
-      <!-- 고정지출 카드 -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title"><span class="cdot" style="background:var(--red)"></span> 고정지출비용</div>
-          <button class="add-btn" onclick="openFixedExpenseModal()" style="padding:5px 12px;font-size:.75rem;">+ 항목 추가</button>
-        </div>
-        <div id="fe-list"><div class="fe-empty">고정지출 항목을 추가해 주세요</div></div>
-        <div class="fe-total-row" id="fe-total-row" style="display:none;">
-          <span class="fe-total-lbl">월 고정지출 합계</span>
-          <span class="fe-total-amt" id="fe-total-amt">₩0</span>
-        </div>
-      </div>
-      <!-- 주별 수입/지출 막대그래프 -->
-      <div class="card">
-        <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--purple)"></span> 주별 수입/지출</div></div>
-        <div id="sp-weekly-chart"></div>
-      </div>
-    </div>
-
-    <!-- 주별 내역 (가장 하단) -->
-    <div class="card" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title"><span class="cdot" style="background:var(--gold)"></span> 주별 내역</div></div>
-      <div id="sp-weekly-list"></div>
-    </div>
-
   </div><!-- /spending -->
 
 
   <!-- ══ PAGE: 수입/지출 관리 ══ -->
   <div class="page" id="page-txmanage">
     <div class="pg-hdr">
-      <div>
-        <div class="pg-hdr-title">📅 수입/지출 관리</div>
-        <div class="pg-hdr-sub">날짜별 수입/지출 내역을 추가·수정하세요</div>
-      </div>
+      <div><div class="pg-hdr-title">📅 수입/지출 관리</div><div class="pg-hdr-sub">날짜별 수입/지출 내역을 추가·수정하세요</div></div>
       <button class="add-btn" onclick="openTxModal(null)" style="padding:9px 16px;font-size:.82rem;">+ 내역 추가</button>
     </div>
-
-    <!-- Month nav -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
       <div class="month-nav">
         <button class="month-nav-btn" onclick="txPrevMonth()">‹</button>
@@ -683,9 +680,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-hei
         <div style="font-size:.78rem;color:var(--red);background:var(--red-light);padding:5px 12px;border-radius:20px;font-family:var(--font-mono);font-weight:500;" id="tx-month-expense">지출 ₩0</div>
       </div>
     </div>
-
-    <div class="card">
-      <div id="tx-manage-list"></div>
+    <div class="dash-grid" id="grid-txmanage">
+      <div class="dash-card" data-id="tx-list" data-col="12" data-row="8">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 수입/지출 내역</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div id="tx-manage-list"></div>
+        </div>
+      </div>
     </div>
   </div><!-- /txmanage -->
 
@@ -696,12 +698,24 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-hei
       <div><div class="pg-hdr-title">💰 예금 관리</div><div class="pg-hdr-sub">정기예금을 추가하고 이자를 확인하세요</div></div>
       <button class="add-btn" onclick="openModal('deposit')" style="padding:9px 16px;font-size:.82rem;">+ 예금 추가</button>
     </div>
-    <div class="stat-strip">
-      <div class="stat-box"><div class="stat-box-lbl">총 예금액</div><div class="stat-box-val purple" id="dep-stat-total">₩0</div></div>
-      <div class="stat-box"><div class="stat-box-lbl">월 이자 합계 (세후)</div><div class="stat-box-val green" id="dep-stat-monthly">₩0</div></div>
-      <div class="stat-box"><div class="stat-box-lbl">예금 상품 수</div><div class="stat-box-val" id="dep-stat-count">0개</div></div>
+    <div class="dash-grid" id="grid-deposit">
+      <div class="dash-card" data-id="dep-stats" data-col="12" data-row="2">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 예금 요약</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="stat-strip" style="margin:0;height:100%;">
+          <div class="stat-box"><div class="stat-box-lbl">총 예금액</div><div class="stat-box-val purple" id="dep-stat-total">₩0</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">월 이자 합계 (세후)</div><div class="stat-box-val green" id="dep-stat-monthly">₩0</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">예금 상품 수</div><div class="stat-box-val" id="dep-stat-count">0개</div></div>
+        </div>
+      </div>
+      <div class="dash-card" data-id="dep-list" data-col="12" data-row="8">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 예금 목록</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div id="depositList"><div style="text-align:center;color:var(--muted);padding:32px;font-size:.82rem;">예금을 추가해 주세요</div></div>
+        </div>
+      </div>
     </div>
-    <div class="card"><div id="depositList"><div style="text-align:center;color:var(--muted);padding:32px;font-size:.82rem;">예금을 추가해 주세요</div></div></div>
   </div>
 
 
@@ -711,12 +725,24 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-hei
       <div><div class="pg-hdr-title">🏦 적금 관리</div><div class="pg-hdr-sub">적금 상품을 추가하고 납입 현황을 확인하세요</div></div>
       <button class="add-btn" onclick="openModal('savings')" style="padding:9px 16px;font-size:.82rem;">+ 적금 추가</button>
     </div>
-    <div class="stat-strip">
-      <div class="stat-box"><div class="stat-box-lbl">총 누적 납입액</div><div class="stat-box-val purple" id="sav-stat-total">₩0</div></div>
-      <div class="stat-box"><div class="stat-box-lbl">월 납입액 합계</div><div class="stat-box-val green" id="sav-stat-monthly">₩0</div></div>
-      <div class="stat-box"><div class="stat-box-lbl">적금 상품 수</div><div class="stat-box-val" id="sav-stat-count">0개</div></div>
+    <div class="dash-grid" id="grid-savings">
+      <div class="dash-card" data-id="sav-stats" data-col="12" data-row="2">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 적금 요약</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="stat-strip" style="margin:0;height:100%;">
+          <div class="stat-box"><div class="stat-box-lbl">총 누적 납입액</div><div class="stat-box-val purple" id="sav-stat-total">₩0</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">월 납입액 합계</div><div class="stat-box-val green" id="sav-stat-monthly">₩0</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">적금 상품 수</div><div class="stat-box-val" id="sav-stat-count">0개</div></div>
+        </div>
+      </div>
+      <div class="dash-card" data-id="sav-list" data-col="12" data-row="8">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 적금 목록</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div id="savingsList"><div style="text-align:center;color:var(--muted);padding:32px;font-size:.82rem;">적금을 추가해 주세요</div></div>
+        </div>
+      </div>
     </div>
-    <div class="card"><div id="savingsList"><div style="text-align:center;color:var(--muted);padding:32px;font-size:.82rem;">적금을 추가해 주세요</div></div></div>
   </div>
 
 
@@ -726,19 +752,29 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-hei
       <div><div class="pg-hdr-title">📈 주식 관리</div><div class="pg-hdr-sub">보유 종목을 추가하고 실시간 주가를 확인하세요</div></div>
       <button class="add-btn" onclick="openModal('stock')" style="padding:9px 16px;font-size:.82rem;">+ 종목 추가</button>
     </div>
-    <div class="stat-strip">
-      <div class="stat-box"><div class="stat-box-lbl">총 평가금액</div><div class="stat-box-val purple" id="stk-stat-value">₩0</div></div>
-      <div class="stat-box"><div class="stat-box-lbl">총 매입금액</div><div class="stat-box-val" id="stk-stat-cost">₩0</div></div>
-      <div class="stat-box"><div class="stat-box-lbl">평가손익</div><div class="stat-box-val" id="stk-stat-pnl">₩0</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title"><span class="cdot" style="background:var(--gray)"></span> 보유 종목 <span class="live-badge"><span class="live-dot"></span>LIVE</span></div>
+    <div class="dash-grid" id="grid-stock">
+      <div class="dash-card" data-id="stk-stats" data-col="12" data-row="2">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 주식 요약</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="stat-strip" style="margin:0;height:100%;">
+          <div class="stat-box"><div class="stat-box-lbl">총 평가금액</div><div class="stat-box-val purple" id="stk-stat-value">₩0</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">총 매입금액</div><div class="stat-box-val" id="stk-stat-cost">₩0</div></div>
+          <div class="stat-box"><div class="stat-box-lbl">평가손익</div><div class="stat-box-val" id="stk-stat-pnl">₩0</div></div>
+        </div>
       </div>
-      <table class="stk-table">
-        <thead><tr><th>종목</th><th>현재가</th><th>매입가</th><th>수량</th><th>평가금액</th><th>수익률</th><th></th></tr></thead>
-        <tbody id="stockTableBody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;font-size:.8rem;">종목을 추가하면 실시간 주가를 불러옵니다</td></tr></tbody>
-      </table>
+      <div class="dash-card" data-id="stk-list" data-col="12" data-row="8">
+        <div class="dash-drag-handle"><span class="dash-drag-icon">⠿⠿⠿ 보유 종목</span></div>
+        <div class="dash-resize-handle"></div>
+        <div class="card" style="height:100%;border-radius:12px;overflow:auto;">
+          <div class="card-header">
+            <div class="card-title"><span class="cdot" style="background:var(--gray)"></span> 보유 종목 <span class="live-badge"><span class="live-dot"></span>LIVE</span></div>
+          </div>
+          <table class="stk-table">
+            <thead><tr><th>종목</th><th>현재가</th><th>매입가</th><th>수량</th><th>평가금액</th><th>수익률</th><th></th></tr></thead>
+            <tbody id="stockTableBody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;font-size:.8rem;">종목을 추가하면 실시간 주가를 불러옵니다</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -980,6 +1016,16 @@ setInterval(updateClock,1000); updateClock();
 // ── Pages ──
 const PAGE_TITLES = {dashboard:'Asset Dashboard',spending:'지출현황',txmanage:'수입/지출 관리',deposit:'예금 관리',savings:'적금 관리',stock:'주식 관리'};
 function switchPage(p) {
+  // 편집 모드 중이면 자동 저장 후 종료
+  if (isEditMode) {
+    saveDashLayout();
+    isEditMode = false;
+    currentEditPage = null;
+    document.querySelectorAll('.dash-grid').forEach(g => g.classList.remove('edit-active'));
+    destroyDragResize();
+    const btn = document.getElementById('editModeBtn');
+    btn.classList.remove('active'); btn.textContent = '✦ 레이아웃 편집';
+  }
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-item[id^="nav-"]').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.mobile-nav-item[id^="mnav-"]').forEach(x=>x.classList.remove('active'));
@@ -1859,62 +1905,90 @@ function renderFixedExpenses() {
 
 // ── 경량 드래그/리사이즈 대시보드 (외부 라이브러리 없음) ──
 const DASH_LAYOUT_KEY = 'dashLayout_v2';
+// 페이지별 레이아웃 저장 키
+const PAGE_GRID_MAP = {
+  dashboard: { gridId: 'dashGrid',      key: 'layout_dashboard' },
+  spending:  { gridId: 'grid-spending', key: 'layout_spending'  },
+  txmanage:  { gridId: 'grid-txmanage', key: 'layout_txmanage'  },
+  deposit:   { gridId: 'grid-deposit',  key: 'layout_deposit'   },
+  savings:   { gridId: 'grid-savings',  key: 'layout_savings'   },
+  stock:     { gridId: 'grid-stock',    key: 'layout_stock'     },
+};
 let isEditMode = false;
+let currentEditPage = null;
 
-// 레이아웃 저장/불러오기
+function getCurrentPage() {
+  const active = document.querySelector('.page.active');
+  if (!active) return null;
+  return active.id.replace('page-', '');
+}
+
+// 레이아웃 저장
 function saveDashLayout() {
-  const cards = document.querySelectorAll('.dash-card');
+  const page = currentEditPage || getCurrentPage();
+  const cfg = PAGE_GRID_MAP[page]; if (!cfg) return;
+  const grid = document.getElementById(cfg.gridId); if (!grid) return;
   const layout = {};
-  cards.forEach(c => {
+  grid.querySelectorAll('.dash-card').forEach(c => {
     layout[c.dataset.id] = { col: c.dataset.col, row: c.dataset.row };
   });
-  localStorage.setItem(DASH_LAYOUT_KEY, JSON.stringify(layout));
+  localStorage.setItem(cfg.key, JSON.stringify(layout));
 }
-function loadDashLayout() {
+
+// 레이아웃 불러오기 (특정 페이지)
+function loadPageLayout(page) {
+  const cfg = PAGE_GRID_MAP[page]; if (!cfg) return;
   try {
-    const saved = localStorage.getItem(DASH_LAYOUT_KEY);
+    const saved = localStorage.getItem(cfg.key);
     if (!saved) return;
     const layout = JSON.parse(saved);
+    const grid = document.getElementById(cfg.gridId); if (!grid) return;
     Object.entries(layout).forEach(([id, val]) => {
-      const card = document.querySelector(`.dash-card[data-id="${id}"]`);
-      if (card) {
-        card.dataset.col = val.col;
-        card.dataset.row = val.row;
-      }
+      const card = grid.querySelector(`.dash-card[data-id="${id}"]`);
+      if (card) { card.dataset.col = val.col; card.dataset.row = val.row; }
     });
   } catch(e) {}
 }
+function loadDashLayout() {
+  Object.keys(PAGE_GRID_MAP).forEach(p => loadPageLayout(p));
+}
 
-// 편집 모드 토글
+// 편집 모드 토글 — 현재 페이지 기준
 function toggleEditMode() {
   isEditMode = !isEditMode;
   const btn = document.getElementById('editModeBtn');
-  const grid = document.getElementById('dashGrid');
+  const page = getCurrentPage();
+  const cfg = PAGE_GRID_MAP[page];
+  const grid = cfg ? document.getElementById(cfg.gridId) : null;
+
   if (isEditMode) {
-    grid.classList.add('edit-active');
+    currentEditPage = page;
+    if (grid) grid.classList.add('edit-active');
     btn.classList.add('active');
     btn.textContent = '✓ 편집 완료';
-    initDragResize();
+    if (grid) initDragResize(grid);
     showToast('✦ 카드 헤더를 드래그하거나 ↘ 모서리로 크기를 조절하세요');
   } else {
-    grid.classList.remove('edit-active');
+    if (grid) grid.classList.remove('edit-active');
     btn.classList.remove('active');
     btn.textContent = '✦ 레이아웃 편집';
     destroyDragResize();
     saveDashLayout();
+    currentEditPage = null;
     showToast('✅ 레이아웃이 저장됐습니다');
   }
 }
 
-// 드래그/리사이즈 초기화
+// 드래그/리사이즈 초기화 — 특정 grid 내 카드에만 적용
 let dragCleanups = [];
-function initDragResize() {
+function initDragResize(grid) {
   destroyDragResize();
-  document.querySelectorAll('.dash-card').forEach(card => {
+  const targetGrid = grid || document.getElementById('dashGrid');
+  targetGrid.querySelectorAll('.dash-card').forEach(card => {
     const handle = card.querySelector('.dash-drag-handle');
     const resizeHandle = card.querySelector('.dash-resize-handle');
-    const dc1 = makeDraggable(card, handle);
-    const dc2 = makeResizable(card, resizeHandle);
+    const dc1 = makeDraggable(card, handle, targetGrid);
+    const dc2 = makeResizable(card, resizeHandle, targetGrid);
     dragCleanups.push(dc1, dc2);
   });
 }
@@ -1923,57 +1997,49 @@ function destroyDragResize() {
   dragCleanups = [];
 }
 
-// 드래그 구현 (CSS grid-column/row order 방식)
-function makeDraggable(card, handle) {
-  const grid = document.getElementById('dashGrid');
-  let startX, startY, startOrder;
-  const COLS = 12, ROW_H = 68; // gap 포함 행 높이
-
-  function getGridRect() { return grid.getBoundingClientRect(); }
-  function getColWidth() { return getGridRect().width / COLS; }
-
+// 드래그 구현
+function makeDraggable(card, handle, grid) {
+  const COLS = 12, ROW_H = 68;
+  function getColWidth() { return grid.getBoundingClientRect().width / COLS; }
   function onDown(e) {
     if (!isEditMode) return;
     e.preventDefault();
     const cx = e.touches ? e.touches[0].clientX : e.clientX;
     const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    startX = cx; startY = cy;
+    let startX = cx, startY = cy;
     card.classList.add('dragging');
+    function onMove(e) {
+      e.preventDefault();
+      const cx2 = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy2 = e.touches ? e.touches[0].clientY : e.clientY;
+      const dx = cx2 - startX, dy = cy2 - startY;
+      const colW = getColWidth();
+      const colDelta = Math.round(dx / colW);
+      const rowDelta = Math.round(dy / ROW_H);
+      if (Math.abs(colDelta) >= 1 || Math.abs(rowDelta) >= 1) {
+        const cards = [...grid.querySelectorAll('.dash-card')];
+        const idx = cards.indexOf(card);
+        let swapIdx = idx;
+        if ((colDelta > 0 || rowDelta > 0) && idx < cards.length - 1) swapIdx = idx + 1;
+        if ((colDelta < 0 || rowDelta < 0) && idx > 0) swapIdx = idx - 1;
+        if (swapIdx !== idx) {
+          const ref = swapIdx > idx ? cards[swapIdx].nextSibling : cards[swapIdx];
+          grid.insertBefore(card, ref);
+          startX = cx2; startY = cy2;
+        }
+      }
+    }
+    function onUp() {
+      card.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchend', onUp);
+    }
     document.addEventListener('mousemove', onMove);
     document.addEventListener('touchmove', onMove, {passive:false});
     document.addEventListener('mouseup', onUp);
     document.addEventListener('touchend', onUp);
-  }
-  function onMove(e) {
-    e.preventDefault();
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    const dx = cx - startX, dy = cy - startY;
-    const colW = getColWidth();
-    const colDelta = Math.round(dx / colW);
-    const rowDelta = Math.round(dy / ROW_H);
-    // 카드 순서 변경: 이웃 카드와 swap
-    if (Math.abs(colDelta) >= 1 || Math.abs(rowDelta) >= 1) {
-      const cards = [...document.querySelectorAll('.dash-card')];
-      const idx = cards.indexOf(card);
-      let swapIdx = idx;
-      if (colDelta > 0 && idx < cards.length - 1) swapIdx = idx + 1;
-      if (colDelta < 0 && idx > 0) swapIdx = idx - 1;
-      if (rowDelta > 0 && idx < cards.length - 1) swapIdx = idx + 1;
-      if (rowDelta < 0 && idx > 0) swapIdx = idx - 1;
-      if (swapIdx !== idx) {
-        const ref = swapIdx > idx ? cards[swapIdx].nextSibling : cards[swapIdx];
-        grid.insertBefore(card, ref);
-        startX = cx; startY = cy;
-      }
-    }
-  }
-  function onUp() {
-    card.classList.remove('dragging');
-    document.removeEventListener('mousemove', onMove);
-    document.removeEventListener('touchmove', onMove);
-    document.removeEventListener('mouseup', onUp);
-    document.removeEventListener('touchend', onUp);
   }
   handle.addEventListener('mousedown', onDown);
   handle.addEventListener('touchstart', onDown, {passive:false});
@@ -1983,11 +2049,9 @@ function makeDraggable(card, handle) {
   };
 }
 
-// 리사이즈 구현 (col/row span 조절)
-function makeResizable(card, handle) {
-  const grid = document.getElementById('dashGrid');
+// 리사이즈 구현
+function makeResizable(card, handle, grid) {
   const COLS = 12, MIN_COL = 2, MIN_ROW = 2, ROW_H = 68;
-
   function onDown(e) {
     if (!isEditMode) return;
     e.preventDefault(); e.stopPropagation();
@@ -1996,16 +2060,13 @@ function makeResizable(card, handle) {
     const startCol = parseInt(card.dataset.col) || 4;
     const startRow = parseInt(card.dataset.row) || 4;
     const colW = grid.getBoundingClientRect().width / COLS;
-
     card.classList.add('resizing');
     function onMove(e) {
       e.preventDefault();
       const cx = e.touches ? e.touches[0].clientX : e.clientX;
       const cy = e.touches ? e.touches[0].clientY : e.clientY;
-      const newCol = Math.max(MIN_COL, Math.min(COLS, startCol + Math.round((cx - startX) / colW)));
-      const newRow = Math.max(MIN_ROW, startRow + Math.round((cy - startY) / ROW_H));
-      card.dataset.col = newCol;
-      card.dataset.row = newRow;
+      card.dataset.col = Math.max(MIN_COL, Math.min(COLS, startCol + Math.round((cx - startX) / colW)));
+      card.dataset.row = Math.max(MIN_ROW, startRow + Math.round((cy - startY) / ROW_H));
     }
     function onUp() {
       card.classList.remove('resizing');
