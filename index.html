@@ -765,7 +765,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
     <div class="form-group"><label class="form-label">내용</label><input class="form-input" id="tx-desc" placeholder="예: 월급, 카페, 버스비"></div>
     <div class="form-group"><label class="form-label">금액 (원)</label><input class="form-input" id="tx-amount" type="number" placeholder="50000"></div>
     <div class="form-group"><label class="form-label">카테고리</label><div class="cat-grid" id="cat-grid"></div></div>
-    <div class="modal-actions"><button class="btn-cancel" onclick="closeTxModal()">취소</button><button class="btn-primary" onclick="saveTx()">저장</button></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeTxModal()">취소</button><button class="btn-primary" id="tx-save-btn" onclick="saveTx()">저장</button></div>
   </div>
 </div>
 
@@ -895,7 +895,7 @@ function switchPage(p) {
   if (p==='txmanage') { renderTxManage(); }
   if (p==='deposit') { renderDepStats(); }
   if (p==='savings') { renderSavStats(); }
-  if (p==='stock') { renderStkStats(); }
+  if (p==='stock') { renderStkStats(); if(appData.stocks.length>0) fetchAllStocks(); }
 }
 
 // ── Asset Modals ──
@@ -913,17 +913,61 @@ document.getElementById('modalOverlay').addEventListener('click',function(e){if(
 
 // ── Stock Price ──
 async function fetchStockPrice(ticker) {
-  try {
-    const res=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`);
-    const data=await res.json();
-    const meta=data.result[0].meta;
-    const price=meta.regularMarketPrice;
-    const prev=meta.previousClose||meta.chartPreviousClose;
-    return {price,change:price-prev,changePct:((price-prev)/prev)*100,currency:meta.currency};
-  } catch(e){return null;}
+  // 여러 프록시를 순차적으로 시도
+  const proxies = [
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`,
+    `https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`)}`,
+  ];
+  for (const url of proxies) {
+    try {
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000)
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const result = data.chart?.result?.[0] || data.result?.[0];
+      if (!result) continue;
+      const meta = result.meta;
+      const price = meta.regularMarketPrice;
+      const prev = meta.previousClose || meta.chartPreviousClose || price;
+      if (!price) continue;
+      return {
+        price,
+        change: price - prev,
+        changePct: ((price - prev) / prev) * 100,
+        currency: meta.currency || 'KRW'
+      };
+    } catch(e) { continue; }
+  }
+  return null;
 }
 
-// ── Deposits ──
+async function fetchAllStocks() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('loading');
+  let updated = 0;
+  for (let s of appData.stocks) {
+    const r = await fetchStockPrice(s.ticker);
+    if (r) {
+      s.currentPrice = r.price;
+      s.change       = r.change;
+      s.changePct    = r.changePct;
+      s.currency     = r.currency;
+      s.lastFetched  = new Date().toLocaleTimeString('ko-KR');
+      updated++;
+    }
+  }
+  // 실시간 가격은 로컬에만 캐시 (Sheets 저장 제외 — 가격은 항상 실시간 조회)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  renderStocks();
+  renderStkStats();
+  renderTotals();
+  btn.classList.remove('loading');
+  if (updated > 0) showToast(`📈 ${updated}개 종목 시세 업데이트됨`);
+  else showToast('⚠️ 시세 조회 실패 — 잠시 후 다시 시도합니다');
+}
 function addDeposit() {
   const name=document.getElementById('dep-name').value.trim();
   const amount=parseFloat(document.getElementById('dep-amount').value);
@@ -1025,10 +1069,17 @@ async function addStock() {
   if (!ticker||!name||!price||!qty){showToast('❌ 모든 항목을 입력해주세요');return;}
   if (appData.stocks.find(s=>s.ticker===ticker)){showToast('⚠️ 이미 추가된 종목입니다');return;}
   showToast('🔍 주가 조회 중...');
-  appData.stocks.push({id:Date.now(),ticker,name,buyPrice:price,qty,currentPrice:null,lastFetched:null});
-  saveData(appData); closeModal(); await fetchAllStocks(); showToast('✅ 종목이 추가되었습니다');
+  appData.stocks.push({id:Date.now(),ticker,name,buyPrice:price,qty,currentPrice:null,lastFetched:null,currency:'KRW'});
+  // 주식 구조(종목명/매입가/수량)만 Sheets에 저장 — 현재가 제외
+  await saveData(appData);
+  closeModal();
+  await fetchAllStocks();
+  showToast('✅ 종목이 추가되었습니다');
 }
-function removeStock(id){appData.stocks=appData.stocks.filter(s=>s.id!==id);saveData(appData);renderAll();showToast('🗑️ 종목 삭제됨');}
+function removeStock(id){
+  appData.stocks=appData.stocks.filter(s=>s.id!==id);
+  saveData(appData); renderAll(); showToast('🗑️ 종목 삭제됨');
+}
 async function fetchAllStocks() {
   const btn=document.getElementById('refreshBtn'); btn.classList.add('loading');
   for (let s of appData.stocks) {
@@ -1045,15 +1096,23 @@ function renderStocks() {
     const cost=s.buyPrice*s.qty;
     const value=cur?cur*s.qty:cost;
     const pnlPct=cur?((cur-s.buyPrice)/s.buyPrice)*100:0;
+    const pnlAmt=cur?value-cost:0;
     const isUp=pnlPct>=0;
-    const curDisplay=cur?(s.currency==='USD'?'$'+cur.toFixed(2):fmt(cur)):'<span class="skeleton" style="width:60px;height:14px;display:inline-block"></span>';
+    const curDisplay=cur
+      ?(s.currency==='USD'?'$'+cur.toFixed(2):fmt(cur))
+      :'<span class="skeleton" style="width:60px;height:14px;display:inline-block"></span>';
+    const updatedAt=s.lastFetched?`<div style="font-size:.62rem;color:var(--muted);margin-top:2px;">${s.lastFetched}</div>`:'';
     return `<tr>
       <td><div class="stk-name">${s.name}</div><div class="stk-ticker">${s.ticker}</div></td>
-      <td class="price-mono">${curDisplay}</td>
+      <td class="price-mono">${curDisplay}${updatedAt}</td>
       <td class="price-mono">${s.currency==='USD'?'$'+s.buyPrice.toFixed(2):fmt(s.buyPrice)}</td>
       <td class="price-mono">${s.qty.toLocaleString()}</td>
       <td class="price-mono">${cur?(s.currency==='USD'?'$'+value.toFixed(0):fmt(value)):'-'}</td>
-      <td>${cur?`<span class="chg-badge ${isUp?'up-badge':'down-badge'}">${isUp?'▲':'▼'} ${Math.abs(pnlPct).toFixed(2)}%</span>`:'<span style="color:var(--muted);font-size:.75rem">조회중...</span>'}</td>
+      <td>
+        ${cur?`<span class="chg-badge ${isUp?'up-badge':'down-badge'}">${isUp?'▲':'▼'} ${Math.abs(pnlPct).toFixed(2)}%</span>
+        <div style="font-size:.68rem;font-family:'DM Mono',monospace;color:${isUp?'var(--green)':'var(--red)'};">${pnlAmt>=0?'+':''}${fmt(pnlAmt)}</div>`
+        :'<span style="color:var(--muted);font-size:.75rem">조회중...</span>'}
+      </td>
       <td><button onclick="removeStock(${s.id})" class="rm-btn">✕</button></td>
     </tr>`;
   }).join('');
@@ -1211,18 +1270,49 @@ const CAT_EXPENSE=[
 const CAT_COLORS=['#534AB7','#97C459','#E24B4A','#BA7517','#AFA9EC','#3B6D11','#F09595','#888780'];
 
 // ── Transaction Modal ──
-let txType='income', selCat=null;
+let txType='income', selCat=null, editingTxId=null;
+
 function openTxModal(dateStr) {
+  editingTxId = null;
   txType='income'; selCat=null;
-  document.getElementById('tx-desc').value=''; document.getElementById('tx-amount').value='';
-  const dateInput=document.getElementById('tx-date');
-  dateInput.value=dateStr||new Date().toISOString().split('T')[0];
+  document.getElementById('tx-desc').value='';
+  document.getElementById('tx-amount').value='';
+  // 날짜: 전달된 날짜 있으면 그 날짜, 없으면 오늘 (수정 가능)
+  document.getElementById('tx-date').value = dateStr || new Date().toISOString().split('T')[0];
   document.getElementById('tx-modal-title').textContent='💳 내역 추가';
+  document.getElementById('tx-save-btn').textContent='저장';
   setTxType('income');
   document.getElementById('txModalOverlay').classList.add('active');
 }
-function closeTxModal(){document.getElementById('txModalOverlay').classList.remove('active');}
+
+function editTx(id) {
+  const tx = appData.transactions.find(t => t.id === id);
+  if (!tx) return;
+  editingTxId = id;
+  txType = tx.type;
+  selCat = tx.cat;
+  document.getElementById('tx-date').value = tx.date;
+  document.getElementById('tx-desc').value = tx.desc;
+  document.getElementById('tx-amount').value = tx.amount;
+  document.getElementById('tx-modal-title').textContent = '✏️ 내역 수정';
+  document.getElementById('tx-save-btn').textContent = '수정 완료';
+  setTxType(tx.type);
+  // 카테고리 선택 복원
+  setTimeout(() => {
+    selCat = tx.cat;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    const btn = document.getElementById('cat-' + tx.cat);
+    if (btn) btn.classList.add('selected');
+  }, 0);
+  document.getElementById('txModalOverlay').classList.add('active');
+}
+
+function closeTxModal(){
+  document.getElementById('txModalOverlay').classList.remove('active');
+  editingTxId = null;
+}
 document.getElementById('txModalOverlay').addEventListener('click',function(e){if(e.target===this)closeTxModal();});
+
 function setTxType(type) {
   txType=type; selCat=null;
   document.getElementById('type-btn-i').className='type-btn'+(type==='income'?' ai':'');
@@ -1231,18 +1321,33 @@ function setTxType(type) {
   document.getElementById('cat-grid').innerHTML=cats.map(c=>`<button class="cat-btn" id="cat-${c.id}" onclick="selCatFn('${c.id}')"><span class="cat-icon-lg">${c.icon}</span>${c.label}</button>`).join('');
 }
 function selCatFn(id){selCat=id;document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));const btn=document.getElementById('cat-'+id);if(btn)btn.classList.add('selected');}
+
 function saveTx() {
-  const desc=document.getElementById('tx-desc').value.trim();
-  const amount=parseFloat(document.getElementById('tx-amount').value);
-  const date=document.getElementById('tx-date').value;
+  const desc   = document.getElementById('tx-desc').value.trim();
+  const amount = parseFloat(document.getElementById('tx-amount').value);
+  const date   = document.getElementById('tx-date').value;
   if (!desc||!amount||amount<=0){showToast('❌ 내용과 금액을 입력해주세요');return;}
   if (!selCat){showToast('❌ 카테고리를 선택해주세요');return;}
   if (!date){showToast('❌ 날짜를 선택해주세요');return;}
-  appData.transactions.push({id:Date.now(),date,type:txType,desc,amount,cat:selCat});
-  saveData(appData); closeTxModal();
-  renderCal(); renderTxManage(); renderSpending();
-  if (selDate===date) selectCalDay(date);
-  showToast('✅ 내역이 추가되었습니다');
+
+  if (editingTxId) {
+    // 수정 모드
+    const idx = appData.transactions.findIndex(t => t.id === editingTxId);
+    if (idx !== -1) {
+      appData.transactions[idx] = { id: editingTxId, date, type: txType, desc, amount, cat: selCat };
+    }
+    saveData(appData); closeTxModal();
+    renderCal(); renderTxManage(); renderSpending();
+    if (selDate) selectCalDay(selDate);
+    showToast('✅ 내역이 수정되었습니다');
+  } else {
+    // 추가 모드
+    appData.transactions.push({id:Date.now(), date, type:txType, desc, amount, cat:selCat});
+    saveData(appData); closeTxModal();
+    renderCal(); renderTxManage(); renderSpending();
+    if (selDate===date) selectCalDay(date);
+    showToast('✅ 내역이 추가되었습니다');
+  }
 }
 function removeTx(id) {
   appData.transactions=appData.transactions.filter(t=>t.id!==id);
@@ -1285,6 +1390,7 @@ function renderTxManage() {
           <div class="tx-cat-icon" style="background:${bg}">${cat.icon}</div>
           <div class="tx-info"><div class="tx-name">${t.desc}</div><div class="tx-cat-lbl">${cat.label}</div></div>
           <div class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
+          <button class="tx-remove" onclick="editTx(${t.id})" style="color:var(--purple);margin-left:4px;" title="수정">✎</button>
           <button class="tx-remove" onclick="removeTx(${t.id})">✕</button>
         </div>`;
       }).join('')}
@@ -1603,7 +1709,8 @@ function renderAll() {
   renderFixedExpenses(); renderCardDonut();
 }
 async function refreshAll(){showToast('🔄 데이터 새로고침 중...');await fetchAllStocks();renderAll();}
-setInterval(async()=>{if(appData.stocks.length>0)await fetchAllStocks();},60000);
+// 30초마다 자동 시세 갱신
+setInterval(async()=>{ if(appData.stocks.length>0) await fetchAllStocks(); }, 30000);
 
 renderAll();
 loadFromSheets();
