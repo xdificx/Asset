@@ -807,11 +807,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-hei
       <div class="form-group"><label class="form-label">시작일</label><input class="form-input" id="sav-start" type="date"></div>
       <div class="form-group"><label class="form-label">만기일</label><input class="form-input" id="sav-end" type="date"></div>
     </div>
-    <div class="form-group" style="margin-top:2px">
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-        <input type="checkbox" id="sav-military" onchange="toggleMil()" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;">
-        <span style="font-size:.82rem;color:var(--green);font-weight:500;">🎖️ 장병내일준비적금 (매칭지원금 포함)</span>
-      </label>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">정기입금일 (매월 몇 일)</label>
+        <input class="form-input" id="sav-payday" type="number" min="1" max="31" placeholder="예: 25">
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">입력 시 캘린더·수입/지출 탭에 자동 반영돼요</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="visibility:hidden;">.</label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:8px;">
+          <input type="checkbox" id="sav-military" onchange="toggleMil()" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;">
+          <span style="font-size:.82rem;color:var(--green);font-weight:500;">🎖️ 장병내일준비적금</span>
+        </label>
+      </div>
     </div>
     <div id="militaryOption" style="display:none">
       <div class="mil-box">
@@ -1015,9 +1023,30 @@ function getFeDiscount(f, ym) {
   if (entry.type === 'percent') return Math.round(f.amount * (1 - entry.val / 100));
   return null;
 }
-function getFixedOnDate(ds) {
-  // ds = 'YYYY-MM-DD'
+// 특정 날짜에 적금 납입일 해당 항목 반환
+function getSavingsOnDate(ds) {
   const [y, m, d] = ds.split('-').map(Number);
+  return (appData.savings || [])
+    .filter(s => {
+      if (s.payDay !== d) return false;
+      const date = new Date(ds + 'T00:00:00');
+      if (s.start && new Date(s.start + 'T00:00:00') > date) return false;
+      if (s.end   && new Date(s.end   + 'T00:00:00') < date) return false;
+      return true;
+    })
+    .map(s => ({
+      id: 'sav_' + s.id,
+      date: ds,
+      type: 'expense',
+      desc: s.name + ' 납입',
+      amount: s.monthly,
+      cat: 'sav_auto',
+      isSavings: true,
+    }));
+}
+function getFixedOnDate(ds) {
+  const [y, m, d] = ds.split('-').map(Number);
+  const ym = `${y}-${String(m).padStart(2,'0')}`;
   return (appData.fixedExpenses || [])
     .filter(f => f.day === d)
     .map(f => ({
@@ -1025,27 +1054,29 @@ function getFixedOnDate(ds) {
       date: ds,
       type: 'expense',
       desc: f.name,
-      amount: f.amount,
+      amount: (typeof getFeAmount === 'function') ? getFeAmount(f, ym) : f.amount,
+      origAmount: f.amount,
       cat: 'fe_' + f.cat,
       isFixed: true,
     }));
 }
 function getTx(ds) {
-  const manual = (appData.transactions||[]).filter(t=>t.date===ds);
-  const fixed  = getFixedOnDate(ds);
-  return [...manual, ...fixed];
+  const manual  = (appData.transactions||[]).filter(t=>t.date===ds);
+  const fixed   = getFixedOnDate(ds);
+  const savings = getSavingsOnDate(ds);
+  return [...manual, ...fixed, ...savings];
 }
 function getTxMonth(y,m) {
   const p=`${y}-${String(m+1).padStart(2,'0')}`;
   const manual=(appData.transactions||[]).filter(t=>t.date.startsWith(p));
-  // 해당 월의 모든 날짜에 고정지출 생성
   const dim=new Date(y,m+1,0).getDate();
-  const fixed=[];
+  const fixed=[], savings=[];
   for(let d=1;d<=dim;d++){
     const ds=calKey(y,m,d);
     fixed.push(...getFixedOnDate(ds));
+    savings.push(...getSavingsOnDate(ds));
   }
-  return [...manual,...fixed];
+  return [...manual,...fixed,...savings];
 }
 
 function updateClock() {
@@ -1096,6 +1127,7 @@ function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
   const m=document.getElementById('sav-military'); if(m) m.checked=false;
   document.getElementById('militaryOption').style.display='none';
+  const pd=document.getElementById('sav-payday'); if(pd) pd.value='';
 }
 document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
@@ -1202,8 +1234,11 @@ function addSavings() {
   const start=document.getElementById('sav-start').value;
   const end=document.getElementById('sav-end').value;
   const isMilitary=document.getElementById('sav-military').checked;
+  const payDayVal=document.getElementById('sav-payday').value;
+  const payDay=payDayVal ? parseInt(payDayVal) : null;
   if (!name||!monthly||!rate){showToast('❌ 모든 항목을 입력해주세요');return;}
-  appData.savings.push({id:Date.now(),name,monthly,rate,start,end,isMilitary});
+  if (payDay!==null&&(payDay<1||payDay>31)){showToast('❌ 정기입금일은 1~31 사이로 입력해주세요');return;}
+  appData.savings.push({id:Date.now(),name,monthly,rate,start,end,isMilitary,payDay});
   saveData(appData); closeModal(); renderAll(); showToast('✅ 적금이 추가되었습니다');
 }
 function removeSavings(id){appData.savings=appData.savings.filter(s=>s.id!==id);saveData(appData);renderAll();showToast('🗑️ 적금 삭제됨');}
@@ -1222,6 +1257,7 @@ function renderSavings() {
     const totalInt=totalAcc*(s.rate/100)/12*total;
     const maturity=totalAcc+matching+totalInt;
     const milBadge=s.isMilitary?`<span style="font-size:.67rem;background:var(--green-light);color:var(--green);border:1px solid #C0DD97;padding:1px 7px;border-radius:20px;margin-left:6px;">🎖️ 군적금</span>`:'';
+    const payDayBadge=s.payDay?`<span style="font-size:.67rem;background:var(--purple-light);color:var(--purple);border-radius:20px;padding:1px 7px;margin-left:4px;font-weight:500;">매월 ${s.payDay}일 납입</span>`:'';
     const milDetail=s.isMilitary?`<div class="mil-box" style="margin:8px 0;"><div class="mil-box-hdr">🎖️ 매칭지원금 상세</div>
       <div class="detail-row" style="padding:5px 0;"><span class="detail-label">만기 시 총 납입액</span><span class="detail-value">${fmt(totalAcc)}</span></div>
       <div class="detail-row" style="padding:5px 0;"><span class="detail-label">매칭지원금 (100%)</span><span class="detail-value green">+${fmt(matching)}</span></div>
@@ -1229,7 +1265,7 @@ function renderSavings() {
       <div class="detail-row" style="padding:5px 0;border-bottom:none;"><span class="detail-label" style="font-weight:500;color:var(--text);">만기 수령 예상액</span><span class="detail-value gold" style="font-size:.9rem;">≈ ${fmt(maturity)}</span></div>
     </div>`:'';
     return `<div class="item-block">
-      <div class="item-hdr"><div><div class="item-name">${s.name}${milBadge}</div><div class="item-meta">연 ${s.rate}% | ${elapsed}/${total}개월 납입</div></div><button class="rm-btn" onclick="removeSavings(${s.id})">✕</button></div>
+      <div class="item-hdr"><div><div class="item-name">${s.name}${milBadge}${payDayBadge}</div><div class="item-meta">연 ${s.rate}% | ${elapsed}/${total}개월 납입</div></div><button class="rm-btn" onclick="removeSavings(${s.id})">✕</button></div>
       <div class="detail-row"><span class="detail-label">월 납입액</span><span class="detail-value">${fmt(s.monthly)}</span></div>
       <div class="detail-row"><span class="detail-label">누적 납입액</span><span class="detail-value accent">${fmt(accumulated)}</span></div>
       <div class="detail-row"><span class="detail-label">이번 달 이자</span><span class="detail-value green">${fmt(mi)}</span></div>
@@ -1387,7 +1423,7 @@ function renderCal() {
       if (isSel) cls+=' selected';
       if (d===0) cls+=' sun'; if (d===6) cls+=' sat';
       const chips=txs.slice(0,2).map(t=>{
-        const label=t.isFixed?'🔒':( t.type==='income'?'+':'-');
+        const label=t.isFixed?'🔒':t.isSavings?'🏦':( t.type==='income'?'+':'-');
         return `<div class="cal-chip ${t.type}">${label}${Math.round(t.amount/10000)}만</div>`;
       }).join('');
       const netB=net!==0?`<div class="cal-net ${net>0?'pos':'neg'}">${net>0?'+':''}${Math.round(net/10000)}만</div>`:'';
@@ -1420,11 +1456,17 @@ function selectCalDay(ds) {
   if (!txs.length){list.innerHTML='<div class="day-empty">내역이 없습니다<br>수입/지출 탭에서 추가하세요</div>';return;}
   list.innerHTML=txs.map(t=>{
     const cat=allCats.find(c=>c.id===t.cat)||{icon:'📌',label:'기타'};
-    const bg=t.isFixed?'var(--red-light)':( t.type==='income'?'var(--green-light)':'var(--red-light)');
-    const badge=t.isFixed?'<span style="font-size:.6rem;background:var(--purple-light);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:4px;">고정</span>':'';
+    const bg=t.isFixed?'var(--red-light)':t.isSavings?'var(--green-light)':( t.type==='income'?'var(--green-light)':'var(--red-light)');
+    const badge=t.isFixed
+      ?'<span style="font-size:.6rem;background:var(--purple-light);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:4px;">고정</span>'
+      :t.isSavings
+      ?'<span style="font-size:.6rem;background:var(--green-light);color:var(--green);border-radius:4px;padding:1px 5px;margin-left:4px;">적금</span>'
+      :'';
+    const catLabel=t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.label||'고정지출'):t.isSavings?'적금 납입':cat.label;
+    const icon=t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.icon||'📌'):t.isSavings?'🏦':cat.icon;
     return `<div class="day-tx-item">
-      <div class="day-tx-icon" style="background:${bg}">${cat.icon}</div>
-      <div class="day-tx-info"><div class="day-tx-name">${t.desc}${badge}</div><div class="day-tx-cat">${t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.label||'고정지출'):cat.label}</div></div>
+      <div class="day-tx-icon" style="background:${bg}">${icon}</div>
+      <div class="day-tx-info"><div class="day-tx-name">${t.desc}${badge}</div><div class="day-tx-cat">${catLabel}</div></div>
       <div class="day-tx-amt ${t.type}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
     </div>`;
   }).join('');
@@ -1567,16 +1609,28 @@ function renderTxManage() {
       </div>
       ${items.map(t=>{
         const cat=allCats.find(c=>c.id===t.cat)||{icon:'📌',label:'기타'};
-        const bg=t.isFixed?'var(--red-light)':(t.type==='income'?'var(--green-light)':'var(--red-light)');
-        const catLabel=t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.label||'고정지출'):cat.label;
-        const icon=t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.icon||'📌'):cat.icon;
-        const badge=t.isFixed?'<span style="font-size:.6rem;background:var(--purple-light);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:4px;">고정</span>':'';
+        const bg=t.isFixed?'var(--red-light)':t.isSavings?'var(--green-light)':(t.type==='income'?'var(--green-light)':'var(--red-light)');
+        const catLabel=t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.label||'고정지출'):t.isSavings?'적금 납입':cat.label;
+        const icon=t.isFixed?(FE_CATS[t.cat.replace('fe_','')]?.icon||'📌'):t.isSavings?'🏦':cat.icon;
+        const badge=t.isFixed
+          ?'<span style="font-size:.6rem;background:var(--purple-light);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:4px;">고정</span>'
+          :t.isSavings
+          ?'<span style="font-size:.6rem;background:var(--green-light);color:var(--green);border-radius:4px;padding:1px 5px;margin-left:4px;">적금</span>'
+          :'';
         if(t.isFixed){
           return `<div class="tx-item">
             <div class="tx-cat-icon" style="background:${bg}">${icon}</div>
             <div class="tx-info"><div class="tx-name">${t.desc}${badge}</div><div class="tx-cat-lbl">${catLabel}</div></div>
             <div class="tx-amount expense">-${fmt(t.amount)}</div>
             <button class="tx-remove" onclick="switchPage('spending')" title="고정지출 탭에서 수정" style="color:var(--muted);">⚙</button>
+          </div>`;
+        }
+        if(t.isSavings){
+          return `<div class="tx-item">
+            <div class="tx-cat-icon" style="background:${bg}">${icon}</div>
+            <div class="tx-info"><div class="tx-name">${t.desc}${badge}</div><div class="tx-cat-lbl">${catLabel}</div></div>
+            <div class="tx-amount expense">-${fmt(t.amount)}</div>
+            <button class="tx-remove" onclick="switchPage('savings')" title="적금 탭에서 수정" style="color:var(--muted);">⚙</button>
           </div>`;
         }
         return `<div class="tx-item">
@@ -1600,10 +1654,7 @@ function renderSpending() {
   document.getElementById('sp-month-sub').textContent=`${spY}년 ${spM+1}월 지출 분석`;
   const txs=getTxMonth(spY,spM);
   const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const txExp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const fixedItems=appData.fixedExpenses||[];
-  const fixedTotal=fixedItems.reduce((s,f)=>s+f.amount,0);
-  const exp=txExp+fixedTotal;
+  const exp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
 
   document.getElementById('sp-income').textContent='+'+fmt(inc);
   document.getElementById('sp-expense').textContent='-'+fmt(exp);
@@ -1628,7 +1679,6 @@ function renderSpending() {
   const expTxs=txs.filter(t=>t.type==='expense');
   const catMap={};
   expTxs.forEach(t=>{if(!catMap[t.cat])catMap[t.cat]=0;catMap[t.cat]+=t.amount;});
-  fixedItems.forEach(f=>{const key='fe_'+f.cat;if(!catMap[key])catMap[key]=0;catMap[key]+=f.amount;});
   const catEntries=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
   const allCats=[...CAT_INCOME,...CAT_EXPENSE];
   const svg=document.getElementById('sp-donut-svg');
