@@ -2415,7 +2415,8 @@ setInterval(async()=>{ if(appData.stocks.length>0) await fetchAllStocks(); }, 30
      'renderSavings','renderStocks','renderSpending'].forEach(fn=>{
       if(typeof window[fn]!=='function') missing.push(fn);
     });
-    if(typeof window.appData==='undefined') missing.push('appData');
+    // appData는 let 선언이라 window.appData로 접근 불가 → 직접 체크
+    try { if(typeof appData==='undefined') missing.push('appData'); } catch(e) { missing.push('appData'); }
     if(missing.length===0){
       st('d1','ok','① JS 정상 — 모든 주요 함수 로드됨');
       log('확인된 함수: loadFromSheets, renderAll, renderTotals 등','#a6e3a1');
